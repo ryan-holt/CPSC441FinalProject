@@ -1,5 +1,7 @@
 package Master;
 
+import util.Message;
+
 /**
  * The controller of the Master part of the application
  * @author Gary Wu, Richard Lee, Ryan Holt, Tyler Lam
@@ -10,7 +12,7 @@ public class Controller {
     /**
      * SocketHandler class that handles all socket communication with slave and client
      */
-    SocketHandler sockethandle;
+    SocketHandler socketHandle;
     /**
      * Controls all the survey questions and responses
      */
@@ -23,20 +25,19 @@ public class Controller {
     /**
      * Rule controller
      */
-    RuleController ruleController;
+    //RuleController ruleController;
 
     /**
      * Constructs the survey
      * @param newSocketHandler
      * @param newSurveyControl
      * @param newMessage
-     * @param newFileHandle
      */
-    public Controller(SocketHandler newSocketHandler, SurveyController newSurveyControl, Message newMessage, RuleController ruleControl) {
+    public Controller(SocketHandler newSocketHandler, SurveyController newSurveyControl, Message newMessage) {
         socketHandle = newSocketHandler;
         surveyController = newSurveyControl;
         message = newMessage;
-        ruleController = ruleControl;
+        //ruleController = ruleControl;
     }
 
     /**

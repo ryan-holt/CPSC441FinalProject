@@ -1,3 +1,9 @@
+package util;
+
+import util.Message;
+
+import java.util.ArrayList;
+
 /**
  * Holds the answer to the survey questions
  * @author Richard Lee, Tyler Lam, Ryan Holt, Gary Wu
@@ -5,18 +11,18 @@
  * @version 1.0
  */
 public class SurveyAnswer extends Message {
-    ArrayList<String> answerList;
+    ArrayList<SurveyEntry> answerList;
 
     public SurveyAnswer() {
         super("sendSurveyAnswer");
-        answerList = new ArrayList<String>();
+        answerList = new ArrayList<SurveyEntry>();
     }
 
-    public void addAnswer(String newAnswer) {
+    public void addAnswer(SurveyEntry newAnswer) {
         answerList.add(newAnswer);
     }
 
-    public ArrayList<String> getAnswer() {
+    public ArrayList<SurveyEntry> getAnswer() {
         return answerList;
     }
 }

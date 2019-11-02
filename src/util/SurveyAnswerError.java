@@ -1,3 +1,5 @@
+package util;
+
 /**
  * Holds the error to the survey questions
  * @author Richard Lee, Tyler Lam, Ryan Holt, Gary Wu
@@ -8,6 +10,7 @@ public class SurveyAnswerError extends Message{
     public String errorMessage;
 
     public SurveyAnswerError() {
+        super("answerError");
         errorMessage = new String("Unfortunately, an invalid message has been created.");
     }
 

@@ -1,4 +1,12 @@
 package Master;
+
+import util.Message;
+import util.SurveyAnswer;
+import util.SurveyQuestions;
+
+import java.io.IOException;
+import java.util.ArrayList;
+
 /**
  * Survey controller manages all the surveys
  * @author Tyler Lam, Gary Wu, Ryan Holt, Richard Lee
@@ -19,7 +27,7 @@ public class SurveyController {
      * Reviews the survey answers, write to file, and sends it to slaves
      * @param incomingMessage
      */
-    public void setSurveyAnswers(Message incomingMessage) {
+    public void setSurveyAnswers(SurveyAnswer incomingMessage) throws IOException {
         //Decompact the survey
         fileHandler.writeArrayToFile(incomingMessage.getAnswer());
         //TODO: Break down the survey before sending it back out
@@ -32,12 +40,7 @@ public class SurveyController {
      */
     public SurveyQuestions sendSurvey() {
         // could also just read a text file into the arraylist
-        SurveyQuestions surveyQ = new SurveyQuestions("SEND_SURVEY");
-        fileHandler.writeArrayToFile(message.buildSurveyQuestionList());
-        ArrayList<String> tempQuestionList = ReadFromFile("C:\\Users\\Tyler\\Documents\\Database.txt");
-        for(int i = 0; i < tempQuestionList.size(); i++) {
-            surveyQ.add(tempQuestionList.get(i));
-        }
+        SurveyQuestions surveyQ = new SurveyQuestions();
         return surveyQ;
     }
 }

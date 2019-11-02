@@ -1,3 +1,7 @@
+package util;
+
+import java.util.ArrayList;
+
 /**
  * Holds the survey questions
  * @author Richard Lee, Tyler Lam, Ryan Holt, Gary Wu
