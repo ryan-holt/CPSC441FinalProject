@@ -21,4 +21,8 @@ public class KeywordGroup implements Serializable {
 	private void sort() {
 		Collections.sort(keywords);
 	}
+
+	public ArrayList<String> getKeywords() {
+		return keywords;
+	}
 }
