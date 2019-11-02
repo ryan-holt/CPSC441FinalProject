@@ -7,17 +7,17 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 
-public class SocketHandler {
+public class OLD_SocketHandler {
 	private ObjectOutputStream objectWriter;
 	private ObjectInputStream objectReader;
 
-	public SocketHandler(Socket socket) {
+	public OLD_SocketHandler(Socket socket) {
 		try {
 			//Create the IO object streams. objectWriter MUST come before objectReader
 			objectWriter = new ObjectOutputStream(socket.getOutputStream());
 			objectReader = new ObjectInputStream(socket.getInputStream());
 		} catch (IOException e) {
-			System.err.println("Error: Could not create SocketHandler");
+			System.err.println("Error: Could not create OLD_SocketHandler");
 			e.printStackTrace();
 		}
 	}
@@ -46,7 +46,7 @@ public class SocketHandler {
 		try {
 			objectWriter.writeObject(msg);
 		} catch (IOException e) {
-			System.err.println("Error: SocketHandler failed to write to socket");
+			System.err.println("Error: OLD_SocketHandler failed to write to socket");
 			e.printStackTrace();
 		}
 	}

@@ -1,9 +1,6 @@
 package util;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class SocketHandlerTest {
 
@@ -14,7 +11,7 @@ class SocketHandlerTest {
 	@Test
 	void read() {
 
-		SocketHandler socketHandler;
+		OLD_SocketHandler socketHandler;
 	}
 
 	@Test
