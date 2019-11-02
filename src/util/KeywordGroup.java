@@ -10,15 +10,13 @@ public class KeywordGroup implements Serializable {
 
 	public KeywordGroup(ArrayList<String> keywords) {
 		this.keywords = keywords;
-		sort();
 	}
 
 	public KeywordGroup(String... keywords) {
 		this.keywords = (ArrayList<String>) Arrays.asList(keywords);
-		sort();
 	}
 
-	private void sort() {
+	public void sort() {
 		Collections.sort(keywords);
 	}
 
