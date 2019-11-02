@@ -8,7 +8,7 @@ import java.net.*;
  * Overall the client controller is used for communication with
  * the server
  */
-public class ClientController {
+public class AdminClientController {
 
     //MEMBER VARIABLES
     private ObjectOutputStream socketOut;
@@ -23,7 +23,7 @@ public class ClientController {
      * @param serverName name of server
      * @param portNumber port number
      */
-    public ClientController(String serverName, int portNumber) {
+    public AdminClientController(String serverName, int portNumber) {
         try {
             aSocket = new Socket(serverName, portNumber);
 
@@ -42,33 +42,12 @@ public class ClientController {
      * @throws ClassNotFoundException 
      */
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        ClientController cc = new ClientController("10.13.71.24", 9000);
+        AdminClientController cc = new AdminClientController("10.13.71.24", 9000);
         cc.communicateWithServer();
     }
 
     public void communicateWithServer() throws IOException, ClassNotFoundException {
-        String line;
-        String ServerE;
-        ServerE = (String)(socketIn.readObject());
-        System.out.println("hi " + ServerE);
-        line = inFromUser.readLine();
-        socketOut.writeObject(line);
-        ServerE = (String)(socketIn.readObject());
-        System.out.println("hi " + ServerE);
-        //System.out.println("Quesiton 2");
-        line = inFromUser.readLine();
-        socketOut.writeObject(line);
-        ServerE = (String)(socketIn.readObject());
-        System.out.println("hi " + ServerE);
-        //System.out.println("Quesiton 3");
-        line = inFromUser.readLine();
-        socketOut.writeObject(line);
-        ServerE = (String)(socketIn.readObject());
-        System.out.println("hi " + ServerE);
-        //System.out.println("Quesiton 3");
-        line = inFromUser.readLine();
-        socketOut.writeObject(line);
-
+       
     }
 
     //GETTERS AND SETTERS

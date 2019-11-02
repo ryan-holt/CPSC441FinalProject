@@ -37,22 +37,34 @@ public class SocketHandler implements Runnable {
 
     public void communicate() {
         ArrayList<String> responses = new ArrayList<String>();
-        try {
-            socketOut.writeObject("First Questions");
-            responses.add((String)socketIn.readObject());
-            socketOut.writeObject("Second Questions");
-            responses.add((String)socketIn.readObject());
-            socketOut.writeObject("Third Questions");
-            responses.add((String)socketIn.readObject());
-            socketOut.writeObject("Forth Questions");
-            responses.add((String)socketIn.readObject());
-            for(int i = 0; i < responses.size(); i++) {
-                System.out.println("i " + responses.get(i));
+        //socketOut.writeObject("Please enter your name");
+        	try {
+        		socketOut.writeObject("Please enter your name");
+        		String input = (String)socketIn.readObject();
+
+                switch (input) {
+                    case "admin":
+                        
+                        break;
+                   default:
+                	   
+                }
+        	} catch (Exception e) {
+        	}
+            try {
+                socketOut.writeObject("First Questions");
+                responses.add((String)socketIn.readObject());
+                socketOut.writeObject("Second Questions");
+                responses.add((String)socketIn.readObject());
+                socketOut.writeObject("Third Questions");
+                responses.add((String)socketIn.readObject());
+                socketOut.writeObject("Forth Questions");
+                responses.add((String)socketIn.readObject());
+                for(int i = 0; i < responses.size(); i++) {
+                    System.out.println("i " + responses.get(i));
+                }
+            } catch (Exception e) {
             }
-        } catch (Exception e) {
-        }
-
-
     }
 
     /**
