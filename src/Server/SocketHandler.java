@@ -1,6 +1,9 @@
+package Server;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+
+import util.*;
 
 /**
  * This class is responsible for communicating with the client.
@@ -38,17 +41,54 @@ public class SocketHandler implements Runnable {
     public void communicate() {
         ArrayList<String> responses = new ArrayList<String>();
         //socketOut.writeObject("Please enter your name");
+        Message action = new Message("Please enter your name");
+        Message returnAction = new Message();
         	try {
-        		socketOut.writeObject("Please enter your name");
-        		String input = (String)socketIn.readObject();
-
-                switch (input) {
-                    case "admin":
-                        
-                        break;
-                   default:
-                	   
-                }
+        		socketOut.writeObject(action);
+        		returnAction = (Message)socketIn.readObject();
+        		boolean endWhile = true;
+        		SurveyQuestions surQues = new SurveyQuestions();
+        		if(returnAction.getAction().compareToIgnoreCase("admin") ==  1) {
+        			action.setAction("Please enter one of the following actions: calculateCorrelation, listHistoricalCorrelation, viewHistoricalCorrelation or Quit");
+        			while(endWhile) {
+        				try {
+        					socketOut.writeObject(action);
+        					returnAction = (Message)socketIn.readObject();
+        					switch(returnAction.getAction()) {
+        						case "calculateCorrelation":
+        							//Insert code to calculate correlations
+        							action.setAction("Please enter one of the following actions: calculateCorrelation, listHistoricalCorrelation, viewHistoricalCorrelation or Quit");
+                					break;
+        						case "listHistoricalCorrelation": 
+        							//Insert code to do that
+        							action.setAction("Please enter one of the following actions: calculateCorrelation, listHistoricalCorrelation, viewHistoricalCorrelation or Quit");
+                					break;
+        						case "viewHistoricalCorrelation":
+        							//Insert code to do that 
+        							action.setAction("Please enter one of the following actions: calculateCorrelation, listHistoricalCorrelation, viewHistoricalCorrelation or Quit");
+                					break;
+        						case "quit":
+        							endWhile = false;
+        							break;
+        						default:
+        							action.setAction("Invalid selction, please enter one of the following actions: calculateCorrelation, listHistoricalCorrelation, viewHistoricalCorrelation or Quit");
+        							break;
+        					}
+        				} catch (Exception e) {
+        					
+        				}
+        			}
+        		} else {
+        			action.setAction("Please Complete our survey");
+        			//socketOut.writeObject()
+        		}
+        		socketIn.close();
+        		socketOut.close();
+        		aSocket.close();
+        		System.exit(1);
+        			
+        		
+       
         	} catch (Exception e) {
         	}
             try {
