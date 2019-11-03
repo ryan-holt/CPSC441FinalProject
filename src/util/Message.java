@@ -13,6 +13,10 @@ public class Message implements Serializable{
 	public Message(String action) {
 		this.action = action;
 	}
+	
+	public Message() {
+		action = "";
+	}
 
 	public String getAction() {
 		return action;

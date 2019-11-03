@@ -1,3 +1,5 @@
+package Master;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -11,13 +13,13 @@ import java.util.concurrent.Executors;
  * this class makes an instance of the ServerCommunicationController
  * for the client in a new thread hi
  */
-public class ServerController {
+public class MasterController {
 
     private static final int PORT = 9000;
     private ServerSocket serverSocket;
     private ExecutorService pool;
 
-    public ServerController() {
+    public MasterController() {
         try {
             serverSocket = new ServerSocket(PORT);
             pool = Executors.newFixedThreadPool(10);
@@ -31,7 +33,7 @@ public class ServerController {
     }
 
     public static void main(String[] args) {
-        ServerController myServer = new ServerController();
+        MasterController myServer = new MasterController();
         myServer.communicateWithClient();
     }
 

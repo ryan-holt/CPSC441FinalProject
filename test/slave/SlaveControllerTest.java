@@ -32,9 +32,9 @@ class SlaveControllerTest {
 		));
 
 		ArrayList<SurveyEntry> testEntries = new ArrayList<SurveyEntry>(Arrays.asList(
-				new SurveyEntry("Jim", "python", "java", "c++"),
-				new SurveyEntry("Bob", "python", "java"),
-				new SurveyEntry("Frank", "python", "c++")
+				new SurveyEntry("Jim", 1, "python", "java", "c++"),
+				new SurveyEntry("Bob", 1, "python", "java"),
+				new SurveyEntry("Frank", 1, "python", "c++")
 		));
 
 		return new AssociationRuleRequest(1, testKeywordGroup, testEntries);
