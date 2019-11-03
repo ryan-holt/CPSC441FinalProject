@@ -4,10 +4,7 @@ import util.AssociationRuleRequest;
 import util.KeywordGroup;
 import util.SurveyEntry;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class RulesController {
@@ -31,27 +28,10 @@ public class RulesController {
 				keywordCounts.put(keyword, 0);
 			}
 		}
-		
+
 		countKeywordEntries(groups, entries, keywordCounts, groupCounts);
 
-		double entriesCount = (double) entries.size();
-		Map<KeywordGroup, Double> scores = new HashMap<>();
-
-		for (KeywordGroup group : groups) {
-			ArrayList<String> keywords = group.getKeywords();
-			double groupCount = (double) groupCounts.get(group);
-
-			double supportScore = groupCount / entriesCount;
-
-			for (String keyword : keywords) {
-				double keywordCount = (double) keywordCounts.get(keyword);
-
-				// Get the confidence score
-				double confidenceScore = groupCount / keywordCount;
-				double score = calculateAssociationScore(supportScore, confidenceScore);
-				scores.put(getOrderedKeywordGroup(group, keyword), score);
-			}
-		}
+		Map<KeywordGroup, Double> scores = calculateRulesScores((double) entries.size(), groups, keywordCounts, groupCounts);
 
 		return scores;
 	}
@@ -85,6 +65,70 @@ public class RulesController {
 
 	private <K> void incrementMapCount(Map<K, Integer> map, K key) {
 		map.put(key, map.get(key) + 1);
+	}
+
+	/**
+	 * Calculate the association rule scores for support and lift by dividing the different counts of groups
+	 * by entries count (support) and also dividing the different group counts by individual keywords (confidence)
+	 * @param entriesCount
+	 * @param groups
+	 * @param keywordCounts
+	 * @param groupCounts
+	 * @return
+	 */
+	private LinkedHashMap<KeywordGroup, Double> calculateRulesScores(double entriesCount, List<KeywordGroup> groups,
+	                                                       Map<String, Integer> keywordCounts, Map<KeywordGroup, Integer> groupCounts) {
+		LinkedHashMap<KeywordGroup, Double> scores = new LinkedHashMap<>();
+
+		int maxEntries = 10;
+		KeywordGroup lowestScoreGroup = null;
+		double lowestScore = 99999; // Impossibly high score, highest score = 1
+
+		for (KeywordGroup group : groups) {
+			ArrayList<String> keywords = group.getKeywords();
+			double groupCount = (double) groupCounts.get(group);
+
+			double supportScore = groupCount / entriesCount;
+
+			for (String keyword : keywords) {
+				double keywordCount = (double) keywordCounts.get(keyword);
+
+				// Get the confidence score
+				double confidenceScore = groupCount / keywordCount;
+				double score = calculateAssociationScore(supportScore, confidenceScore);
+
+
+				KeywordGroup orderedGroup = getOrderedKeywordGroup(group, keyword);
+				if (scores.size() < maxEntries) {
+					scores.put(orderedGroup, score);
+					if (score < lowestScore) {
+						lowestScore = score;
+						lowestScoreGroup = orderedGroup;
+					}
+
+				} else if (score > lowestScore){
+					scores.put(orderedGroup, score);
+					// Evict the lowest score group
+					scores.remove(lowestScoreGroup);
+					// Find the new lowest score group
+					for (Map.Entry<KeywordGroup, Double> entry : scores.entrySet()) {
+						if (lowestScore > entry.getValue()) {
+							lowestScoreGroup = entry.getKey();
+							lowestScore = entry.getValue();
+						}
+					}
+				}
+			}
+		}
+
+		// Sort the map
+		List<Map.Entry<KeywordGroup, Double>> scoresArr = new ArrayList<>(scores.entrySet());
+		scores.clear();
+		scoresArr.stream()
+				.sorted(Comparator.comparingDouble(Map.Entry<KeywordGroup, Double>::getValue).reversed()) // Reverse sort
+				.forEachOrdered(e -> scores.put(e.getKey(), e.getValue())); // Store values back into scores
+
+		return scores;
 	}
 
 	/**
