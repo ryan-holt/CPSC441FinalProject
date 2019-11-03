@@ -17,9 +17,7 @@ public class RulesController {
 	 */
 	public Map<KeywordGroup, Double> calculateAssociationRules(AssociationRuleRequest request) {
 		// Sort the groups by keyword
-		List<KeywordGroup> groups = request.getKeywordGroups()
-				.stream().map(group -> { group.sort(); return group; })
-				.collect(Collectors.toList());
+		List<KeywordGroup> groups = sortKeywordsInGroup(request.getKeywordGroups());
 		List<SurveyEntry> entries = request.getSurveyEntries();
 
 		Map<String, Integer> keywordCounts = new HashMap<>();
@@ -72,6 +70,12 @@ public class RulesController {
 		}
 
 		return scores;
+	}
+
+	private List<KeywordGroup> sortKeywordsInGroup(List<KeywordGroup> groups) {
+		// Sort the groups by keyword
+		return groups.stream().map(group -> { group.sort(); return group; })
+				.collect(Collectors.toList());
 	}
 
 	private <K> void incrementMapCount(Map<K, Integer> map, K key) {
