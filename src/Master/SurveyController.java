@@ -31,7 +31,7 @@ public class SurveyController {
         //Decompact the survey
         fileHandler.writeArrayToFile(incomingMessage.getAnswer());
         //TODO: Break down the survey before sending it back out
-        sockethandle.send(incomingMessage);
+        //sockethandle.send(incomingMessage);
     }
 
     /**

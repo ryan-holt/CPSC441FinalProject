@@ -17,7 +17,7 @@ public class FileHandler {
     String filepath;
 
     public FileHandler() {
-        filepath = System.getProperty("user.home");
+        filepath = System.getProperty("user.dir") + "\\test.txt";
     }
 
     public ArrayList<SurveyEntry> ReadFromFile() throws IOException {
