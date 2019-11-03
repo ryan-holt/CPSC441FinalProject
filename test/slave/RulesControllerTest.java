@@ -3,7 +3,10 @@ package slave;
 import org.junit.jupiter.api.Test;
 import util.AssociationRuleRequest;
 import util.KeywordGroup;
+import util.Rule;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,7 +19,7 @@ class RulesControllerTest {
 		RulesController rulesController = new RulesController();
 		AssociationRuleRequest request = SlaveControllerTest.makeTestAssociationRuleRequest();
 
-		Map<KeywordGroup, Double> out = rulesController.calculateAssociationRules(request);
+		Map<KeywordGroup, Rule> out = rulesController.calculateAssociationRules(request);
 
 		/*
 			base
@@ -52,20 +55,25 @@ class RulesControllerTest {
 
 		assertEquals(6, out.size());
 
-		Map<KeywordGroup, Double> expectedOut = new HashMap<>();
-		expectedOut.put(new KeywordGroup("java", "python"), 0.9);
-		expectedOut.put(new KeywordGroup("python", "java"), 2.0/3.0);
-		expectedOut.put(new KeywordGroup("c++", "python"), 0.9);
-		expectedOut.put(new KeywordGroup("python", "c++"), 2.0/3.0);
-		expectedOut.put(new KeywordGroup("c++", "java"), 0.45);
-		expectedOut.put(new KeywordGroup("java", "c++"), 0.45);
+		Map<KeywordGroup, Rule> expectedOut = new HashMap<>();
+		addTestRule(expectedOut, "java", "python", 0.9, "Bob", "Jim");
+		addTestRule(expectedOut, "python", "java", 2.0/3.0, "Bob", "Jim");
+		addTestRule(expectedOut, "c++", "python", 0.9, "Frank", "Jim");
+		addTestRule(expectedOut, "python", "c++", 2.0/3.0, "Frank", "Jim");
+		addTestRule(expectedOut, "c++", "java", 0.45, "Jim");
+		addTestRule(expectedOut, "java", "c++", 0.45, "Jim");
 
 		for (KeywordGroup expectedKey : expectedOut.keySet()) {
 			assertTrue(out.containsKey(expectedKey));
 		}
 
-		for (Map.Entry<KeywordGroup, Double> expectedEntry : expectedOut.entrySet()) {
-			assertEquals(expectedEntry.getValue(), out.get(expectedEntry.getKey()), 0.0001);
+		for (Map.Entry<KeywordGroup, Rule> expectedEntry : expectedOut.entrySet()) {
+			assertEquals(expectedEntry.getValue().getScore(), out.get(expectedEntry.getKey()).getScore(), 0.0001);
 		}
+	}
+
+	private void addTestRule(Map<KeywordGroup, Rule> expectedOut, String keyword1, String keyword2, double score, String... users) {
+		KeywordGroup grp = new KeywordGroup(keyword1, keyword2);
+		expectedOut.put(grp, new Rule(grp, score, Arrays.asList(users)));
 	}
 }

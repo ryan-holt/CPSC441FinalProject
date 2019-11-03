@@ -38,7 +38,7 @@ public class FileHandler {
     public String writeArrayToFile(ArrayList<SurveyEntry> list) throws IOException {
         BufferedWriter outputWriter = new BufferedWriter(new FileWriter(filepath, true));
         for(int i = 0; i < list.size(); i++) {
-            String tempEntry = new String(Integer.toString(list.get(i).getQuestion()) + "\t" + list.get(i).getName() + "\t" + String.join(",",list.get(i).getSelections()));
+            String tempEntry = new String(Integer.toString(list.get(i).getQuestion()) + "\t" + list.get(i).getUser() + "\t" + String.join(",",list.get(i).getSelections()));
             outputWriter.write(tempEntry + "\n");
         }
         outputWriter.flush();
