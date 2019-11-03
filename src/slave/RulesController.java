@@ -2,8 +2,10 @@ package slave;
 
 import util.AssociationRuleRequest;
 import util.KeywordGroup;
+import util.Rule;
 import util.SurveyEntry;
 
+import java.security.acl.Group;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -12,28 +14,28 @@ public class RulesController {
 	 * Calculate the support and confidence of each keyword group for each survey entry
 	 * @param request
 	 */
-	public Map<KeywordGroup, Double> calculateAssociationRules(AssociationRuleRequest request) {
+	public Map<KeywordGroup, Rule> calculateAssociationRules(AssociationRuleRequest request) {
 		// Sort the groups by keyword
 		List<KeywordGroup> groups = sortKeywordsInGroup(request.getKeywordGroups());
 		List<SurveyEntry> entries = request.getSurveyEntries();
 
 		Map<String, Integer> keywordCounts = new HashMap<>();
-		Map<KeywordGroup, Integer> groupCounts = new HashMap<>();
+		Map<KeywordGroup, GroupUsersData> groupUsers = new HashMap<>();
 
 		// Add the individual keywordCounts and the groups
 		for (KeywordGroup group : groups) {
-			groupCounts.put(group, 0);
+			groupUsers.put(group, new GroupUsersData());
 
 			for (String keyword : group.getKeywords()) {
 				keywordCounts.put(keyword, 0);
 			}
 		}
 
-		countKeywordEntries(groups, entries, keywordCounts, groupCounts);
+		countKeywordEntries(groups, entries, keywordCounts, groupUsers);
 
-		Map<KeywordGroup, Double> scores = calculateRulesScores((double) entries.size(), groups, keywordCounts, groupCounts);
+		Map<KeywordGroup, Rule> rules = calculateRulesScores((double) entries.size(), groups, keywordCounts, groupUsers);
 
-		return scores;
+		return rules;
 	}
 
 	private List<KeywordGroup> sortKeywordsInGroup(List<KeywordGroup> groups) {
@@ -43,28 +45,25 @@ public class RulesController {
 	}
 
 	private void countKeywordEntries(List<KeywordGroup> groups, List<SurveyEntry> entries,
-	                                 Map<String, Integer> keywordCounts, Map<KeywordGroup, Integer> groupCounts) {
+	                                 Map<String, Integer> keywordCounts,
+	                                 Map<KeywordGroup, GroupUsersData> groupUsers) {
 		ArrayList<String> selections;
+		List<String> users = new ArrayList<>();
 		for (SurveyEntry entry : entries) {
 			selections = entry.getSelections();
 
 			for (KeywordGroup group : groups) {
-				ArrayList<String> keywords = group.getKeywords();
-				if (selections.containsAll(keywords)) {
-					incrementMapCount(groupCounts, group);
+				if (selections.containsAll(group.getKeywords())) {
+					groupUsers.get(group).users.add(entry.getUser());
 				}
 			}
 
 			for (Map.Entry<String, Integer> keywordEntry : keywordCounts.entrySet()) {
 				if (selections.contains(keywordEntry.getKey())) {
-					keywordEntry.setValue(keywordEntry.getValue() + 1); // RIP incrementMapCount, screw reusability
+					keywordEntry.setValue(keywordEntry.getValue() + 1);
 				}
 			}
 		}
-	}
-
-	private <K> void incrementMapCount(Map<K, Integer> map, K key) {
-		map.put(key, map.get(key) + 1);
 	}
 
 	/**
@@ -73,20 +72,22 @@ public class RulesController {
 	 * @param entriesCount
 	 * @param groups
 	 * @param keywordCounts
-	 * @param groupCounts
+	 * @param groupUsers
 	 * @return
 	 */
-	private LinkedHashMap<KeywordGroup, Double> calculateRulesScores(double entriesCount, List<KeywordGroup> groups,
-	                                                       Map<String, Integer> keywordCounts, Map<KeywordGroup, Integer> groupCounts) {
-		LinkedHashMap<KeywordGroup, Double> scores = new LinkedHashMap<>();
-
+	private LinkedHashMap<KeywordGroup, Rule> calculateRulesScores(double entriesCount, List<KeywordGroup> groups,
+	                                                       Map<String, Integer> keywordCounts, Map<KeywordGroup, GroupUsersData> groupUsers) {
+//		LinkedHashMap<KeywordGroup, Double> scores = new LinkedHashMap<>();
+		LinkedHashMap<KeywordGroup, Rule> rules = new LinkedHashMap<>();
 		int maxEntries = 10;
 		KeywordGroup lowestScoreGroup = null;
 		double lowestScore = 99999; // Impossibly high score, highest score = 1
 
 		for (KeywordGroup group : groups) {
 			ArrayList<String> keywords = group.getKeywords();
-			double groupCount = (double) groupCounts.get(group);
+			GroupUsersData data = groupUsers.get(group);
+			double groupCount = (double) data.size();
+			List<String> users = data.users; // Get the users
 
 			double supportScore = groupCount / entriesCount;
 
@@ -97,38 +98,40 @@ public class RulesController {
 				double confidenceScore = groupCount / keywordCount;
 				double score = calculateAssociationScore(supportScore, confidenceScore);
 
-
 				KeywordGroup orderedGroup = getOrderedKeywordGroup(group, keyword);
-				if (scores.size() < maxEntries) {
-					scores.put(orderedGroup, score);
+				Rule rule = new Rule(orderedGroup, score, users);
+				if (rules.size() < maxEntries) {
+					rules.put(orderedGroup, rule);
 					if (score < lowestScore) {
 						lowestScore = score;
 						lowestScoreGroup = orderedGroup;
 					}
 
 				} else if (score > lowestScore){
-					scores.put(orderedGroup, score);
+					rules.put(orderedGroup, rule);
 					// Evict the lowest score group
-					scores.remove(lowestScoreGroup);
+					rules.remove(lowestScoreGroup);
 					// Find the new lowest score group
-					for (Map.Entry<KeywordGroup, Double> entry : scores.entrySet()) {
-						if (lowestScore > entry.getValue()) {
+					for (Map.Entry<KeywordGroup, Rule> entry : rules.entrySet()) {
+						if (lowestScore > entry.getValue().getScore()) {
 							lowestScoreGroup = entry.getKey();
-							lowestScore = entry.getValue();
+							lowestScore = entry.getValue().getScore();
 						}
 					}
 				}
 			}
 		}
+		
+		rules.forEach((k, v) -> v.sortUsers()); // Sort the users
 
 		// Sort the map
-		List<Map.Entry<KeywordGroup, Double>> scoresArr = new ArrayList<>(scores.entrySet());
-		scores.clear();
-		scoresArr.stream()
-				.sorted(Comparator.comparingDouble(Map.Entry<KeywordGroup, Double>::getValue).reversed()) // Reverse sort
-				.forEachOrdered(e -> scores.put(e.getKey(), e.getValue())); // Store values back into scores
+		List<Map.Entry<KeywordGroup, Rule>> rulesArr = new ArrayList<>(rules.entrySet());
+		rules.clear();
+		rulesArr.stream()
+				.sorted((a, b) -> (int) (a.getValue().getScore() - b.getValue().getScore())) // Reverse sort
+				.forEachOrdered(e -> rules.put(e.getKey(), e.getValue())); // Store values back into rules
 
-		return scores;
+		return rules;
 	}
 
 	/**
