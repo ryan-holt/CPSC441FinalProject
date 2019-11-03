@@ -23,7 +23,7 @@ public class RulesController {
 		Map<String, Integer> keywordCounts = new HashMap<>();
 		Map<KeywordGroup, Integer> groupCounts = new HashMap<>();
 
-		// Add the individual keywordCounts and the groups for minor improved performance
+		// Add the individual keywordCounts and the groups
 		for (KeywordGroup group : groups) {
 			groupCounts.put(group, 0);
 
@@ -31,24 +31,8 @@ public class RulesController {
 				keywordCounts.put(keyword, 0);
 			}
 		}
-
-		ArrayList<String> selections;
-		for (SurveyEntry entry : entries) {
-			selections = entry.getSelections();
-
-			for (KeywordGroup group : groups) {
-				ArrayList<String> keywords = group.getKeywords();
-				if (selections.containsAll(keywords)) {
-					incrementMapCount(groupCounts, group);
-				}
-			}
-
-			for (Map.Entry<String, Integer> keywordEntry : keywordCounts.entrySet()) {
-				if (selections.contains(keywordEntry.getKey())) {
-					keywordEntry.setValue(keywordEntry.getValue() + 1); // RIP incrementMapCount, screw reusability
-				}
-			}
-		}
+		
+		countKeywordEntries(groups, entries, keywordCounts, groupCounts);
 
 		double entriesCount = (double) entries.size();
 		Map<KeywordGroup, Double> scores = new HashMap<>();
@@ -76,6 +60,27 @@ public class RulesController {
 		// Sort the groups by keyword
 		return groups.stream().map(group -> { group.sort(); return group; })
 				.collect(Collectors.toList());
+	}
+
+	private void countKeywordEntries(List<KeywordGroup> groups, List<SurveyEntry> entries,
+	                                 Map<String, Integer> keywordCounts, Map<KeywordGroup, Integer> groupCounts) {
+		ArrayList<String> selections;
+		for (SurveyEntry entry : entries) {
+			selections = entry.getSelections();
+
+			for (KeywordGroup group : groups) {
+				ArrayList<String> keywords = group.getKeywords();
+				if (selections.containsAll(keywords)) {
+					incrementMapCount(groupCounts, group);
+				}
+			}
+
+			for (Map.Entry<String, Integer> keywordEntry : keywordCounts.entrySet()) {
+				if (selections.contains(keywordEntry.getKey())) {
+					keywordEntry.setValue(keywordEntry.getValue() + 1); // RIP incrementMapCount, screw reusability
+				}
+			}
+		}
 	}
 
 	private <K> void incrementMapCount(Map<K, Integer> map, K key) {
