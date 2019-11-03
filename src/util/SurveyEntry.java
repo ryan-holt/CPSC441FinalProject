@@ -1,9 +1,10 @@
 package util;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class SurveyEntry {
+public class SurveyEntry implements Serializable {
 	private String name;
 	private int question;
 	private ArrayList<String> selections;

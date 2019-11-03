@@ -1,3 +1,6 @@
+package AdminClient;
+
+import util.Message;
 
 import java.io.*;
 import java.net.*;
@@ -27,8 +30,8 @@ public class AdminClientController {
         try {
             aSocket = new Socket(serverName, portNumber);
 
-            socketIn = new ObjectInputStream(aSocket.getInputStream());
             socketOut = new ObjectOutputStream(aSocket.getOutputStream());
+            socketIn = new ObjectInputStream(aSocket.getInputStream());
             inFromUser = new BufferedReader(new InputStreamReader(System.in));
         } catch (IOException e) {
             e.printStackTrace();
@@ -39,25 +42,28 @@ public class AdminClientController {
      * runs the client side
      *
      * @param args command line arguments
-     * @throws ClassNotFoundException 
+     * @throws ClassNotFoundException
      */
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        AdminClientController cc = new AdminClientController("10.13.71.24", 9000);
+        AdminClientController cc = new AdminClientController("localhost", 9000);
         cc.communicateWithServer();
     }
 
     public void communicateWithServer() throws IOException, ClassNotFoundException {
-       
+        String line;
+        Message ServerE;
+        ServerE = (Message)(socketIn.readObject());
+        System.out.println(ServerE.getAction());
+        ServerE.setAction(inFromUser.readLine());
+        writeObject(ServerE);
+        ServerE = (Message)(socketIn.readObject());
+        System.out.println(ServerE.getAction());
+        ServerE.setAction(inFromUser.readLine());
+        writeObject(ServerE);
     }
 
-    //GETTERS AND SETTERS
-    public ObjectOutputStream getSocketOut() {
-        return socketOut;
+    private void writeObject(Object obj) throws IOException {
+        socketOut.writeObject(obj);
+        socketOut.reset();
     }
-
-    public ObjectInputStream getSocketIn() {
-        return socketIn;
-    }
-
-
 }

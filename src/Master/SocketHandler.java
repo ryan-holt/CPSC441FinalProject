@@ -1,7 +1,10 @@
 package Master;
+
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+
+import util.*;
 
 /**
  * This class is responsible for communicating with the client.
@@ -13,13 +16,13 @@ public class SocketHandler implements Runnable {
     private Socket aSocket;
     private ObjectInputStream socketIn;
     private ObjectOutputStream socketOut;
-    private ServerController serverController;
+    private MasterController masterController;
+    private FileHandler fileHandler;
 
-    public SocketHandler(Socket s, ServerController serverController) {
+    public SocketHandler(Socket s, MasterController masterController) {
         try {
             aSocket = s;
-            setServerController(serverController);
-
+            setMasterController(masterController);
             socketOut = new ObjectOutputStream(aSocket.getOutputStream());
 
 
@@ -38,32 +41,51 @@ public class SocketHandler implements Runnable {
 
     public void communicate() {
         ArrayList<String> responses = new ArrayList<String>();
-        //socketOut.writeObject("Please enter your name");
+        Message messageToSend = new Message("Please enter your name");
+        Message responseMessage;
         try {
-            socketOut.writeObject("Please enter your name");
-            String input = (String)socketIn.readObject();
+            writeObject(messageToSend);
+            responseMessage = (Message) socketIn.readObject();
+            boolean endWhile = true;
+            SurveyQuestions surQues = new SurveyQuestions();
+            if (responseMessage.getAction().equalsIgnoreCase("admin")) {
+                while (endWhile) {
+                    messageToSend.setAction("Please enter one of the following actions: calculateCorrelation, " +
+                            "listHistoricalCorrelation, viewHistoricalCorrelation or Quit");
+                    try {
+                        writeObject(messageToSend);
+                        responseMessage = (Message)socketIn.readObject();
+                        switch (responseMessage.getAction()) {
+                            case "calculateCorrelation":
+                                //Insert code to calculate correlations
+                                break;
+                            case "listHistoricalCorrelation":
+                                //Insert code to do that
+                                break;
+                            case "viewHistoricalCorrelation":
+                                //Insert code to do that
+                                break;
+                            case "quit":
+                                endWhile = false;
+                                break;
+                            default:
+                                break;
+                        }
+                    } catch (Exception e) {
 
-            switch (input) {
-                case "admin":
-
-                    break;
-                default:
-
+                    }
+                }
+            } else {
+                SurveyQuestions newSurvey = new SurveyQuestions();
+                writeObject(newSurvey);
+                SurveyAnswer clientAnswer = (SurveyAnswer) socketIn.readObject();
+                fileHandler = new FileHandler();
+                fileHandler.writeArrayToFile(clientAnswer.getAnswer());
             }
-        } catch (Exception e) {
-        }
-        try {
-            socketOut.writeObject("First Questions");
-            responses.add((String)socketIn.readObject());
-            socketOut.writeObject("Second Questions");
-            responses.add((String)socketIn.readObject());
-            socketOut.writeObject("Third Questions");
-            responses.add((String)socketIn.readObject());
-            socketOut.writeObject("Forth Questions");
-            responses.add((String)socketIn.readObject());
-            for(int i = 0; i < responses.size(); i++) {
-                System.out.println("i " + responses.get(i));
-            }
+            socketIn.close();
+            socketOut.close();
+            aSocket.close();
+            System.exit(1);
         } catch (Exception e) {
         }
     }
@@ -92,11 +114,16 @@ public class SocketHandler implements Runnable {
     }
 
     //GETTERS AND SETTERS
-    public void setServerController(ServerController sc) {
-        serverController = sc; // 2-way association
+    public void setMasterController(MasterController sc) {
+        masterController = sc; // 2-way association
     }
 
     public void stop() throws IOException {
         aSocket.close();
+    }
+
+    private void writeObject(Object obj) throws IOException {
+        socketOut.writeObject(obj);
+        socketOut.reset();
     }
 }

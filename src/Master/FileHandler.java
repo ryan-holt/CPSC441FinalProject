@@ -17,7 +17,7 @@ public class FileHandler {
     String filepath;
 
     public FileHandler() {
-        filepath = System.getProperty("user.dir") + "\\test.txt";
+        filepath = System.getProperty("user.dir") + "\\SurveyEntries.txt";
     }
 
     public ArrayList<SurveyEntry> ReadFromFile() throws IOException {
@@ -36,7 +36,7 @@ public class FileHandler {
     }
 
     public String writeArrayToFile(ArrayList<SurveyEntry> list) throws IOException {
-        BufferedWriter outputWriter = new BufferedWriter(new FileWriter(filepath));
+        BufferedWriter outputWriter = new BufferedWriter(new FileWriter(filepath, true));
         for(int i = 0; i < list.size(); i++) {
             String tempEntry = new String(Integer.toString(list.get(i).getQuestion()) + "\t" + list.get(i).getName() + "\t" + String.join(",",list.get(i).getSelections()));
             outputWriter.write(tempEntry + "\n");

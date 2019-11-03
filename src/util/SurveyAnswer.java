@@ -1,7 +1,4 @@
 package util;
-
-import util.Message;
-
 import java.util.ArrayList;
 
 /**
@@ -13,13 +10,9 @@ import java.util.ArrayList;
 public class SurveyAnswer extends Message {
     ArrayList<SurveyEntry> answerList;
 
-    public SurveyAnswer() {
-        super("sendSurveyAnswer");
-        answerList = new ArrayList<SurveyEntry>();
-    }
-
-    public void addAnswer(SurveyEntry newAnswer) {
-        answerList.add(newAnswer);
+    public SurveyAnswer(ArrayList<SurveyEntry> answerList) {
+        super("sendSurveyAnswers");
+        this.answerList = answerList;
     }
 
     public ArrayList<SurveyEntry> getAnswer() {
