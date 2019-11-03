@@ -5,10 +5,7 @@ import util.KeywordGroup;
 import util.Message;
 import util.SurveyEntry;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class SlaveController {
@@ -56,10 +53,17 @@ public class SlaveController {
 					incrementMapCount(groupCounts, group);
 				}
 
-				for (String keyword : keywords) {
-					if (selections.contains(keyword)) {
-						incrementMapCount(keywordCounts, keyword);
-					}
+				// FIXME delete
+//				for (String keyword : keywords) {
+//					if (selections.contains(keyword)) {
+//						incrementMapCount(keywordCounts, keyword);
+//					}
+//				}
+			}
+
+			for (Map.Entry<String, Integer> keywordEntry : keywordCounts.entrySet()) {
+				if (selections.contains(keywordEntry.getKey())) {
+					keywordEntry.setValue(keywordEntry.getValue() + 1); // RIP incrementMapCount, screw reusability
 				}
 			}
 		}
@@ -77,7 +81,7 @@ public class SlaveController {
 				double keywordCount = (double) keywordCounts.get(keyword);
 
 				// Get the confidence score
-				double confidenceScore = keywordCount / groupCount;
+				double confidenceScore = groupCount / keywordCount;
 				double score = calculateAssociationScore(supportScore, confidenceScore);
 				scores.put(getOrderedKeywordGroup(group, keyword), score);
 			}

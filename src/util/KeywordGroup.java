@@ -1,5 +1,6 @@
 package util;
 
+import javax.crypto.KeyGenerator;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +14,24 @@ public class KeywordGroup implements Serializable {
 	}
 
 	public KeywordGroup(String... keywords) {
-		this.keywords = (ArrayList<String>) Arrays.asList(keywords);
+		this.keywords = new ArrayList<String>(Arrays.asList(keywords));
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == this) {
+			return true;
+		} else if (!(obj instanceof KeywordGroup)) {
+			return false;
+		}
+
+		KeywordGroup group2 = (KeywordGroup) obj;
+		return keywords.equals(group2.keywords);
+	}
+
+	@Override
+	public int hashCode() {
+		return keywords.hashCode();
 	}
 
 	public void sort() {

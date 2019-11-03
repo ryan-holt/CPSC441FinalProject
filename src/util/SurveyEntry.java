@@ -14,7 +14,7 @@ public class SurveyEntry {
 
 	public SurveyEntry(String name, String... selections) {
 		this.name = name;
-		this.selections = (ArrayList<String>) Arrays.asList(selections);
+		this.selections = new ArrayList<String>(Arrays.asList(selections));
 	}
 
 	public ArrayList<String> getSelections() {
