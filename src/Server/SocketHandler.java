@@ -24,7 +24,6 @@ public class SocketHandler implements Runnable {
 
             socketOut = new ObjectOutputStream(aSocket.getOutputStream());
 
-
             printIPInfo();
         } catch (IOException e) {
             System.out.println("ServerCommController: Create ServerCommController Error");
@@ -44,7 +43,9 @@ public class SocketHandler implements Runnable {
         Message action = new Message("Please enter your name");
         Message returnAction = new Message();
         	try {
+        		Message first = (Message)socketIn.readObject();
         		socketOut.writeObject(action);
+        		socketOut.flush();
         		returnAction = (Message)socketIn.readObject();
         		boolean endWhile = true;
         		Survey sur = new Survey();
@@ -53,6 +54,7 @@ public class SocketHandler implements Runnable {
         			while(endWhile) {
         				try {
         					socketOut.writeObject(action);
+        					socketOut.flush();
         					returnAction = (Message)socketIn.readObject();
         					switch(returnAction.getAction()) {
         						case "calculateCorrelation":
@@ -80,21 +82,26 @@ public class SocketHandler implements Runnable {
         			}
         		} else {
         			action.setAction("Please Complete our survey");
-        			socketOut.writeObject(sur);
-        			sur = (Survey)socketIn.readObject();
-        			action.setAction("Recieved");
+        			System.out.println(action.getAction() + "hi");
+        			socketOut.reset();
         			socketOut.writeObject(action);
+        			socketOut.flush();
+        			sur.setSurAns((SurveyAnswer)socketIn.readObject());
+        			//sur = (Survey)socketIn.readObject();
+        			action.setAction("Recieved");
+        			socketOut.reset();
+        			socketOut.writeObject(action);
+        			socketOut.flush();
         			//socketOut.writeObject()
         		}
+        		//Rn I've set server to close over user submits there survey
         		socketIn.close();
         		socketOut.close();
         		aSocket.close();
         		System.exit(1);
-        			
-        		
-       
         	} catch (Exception e) {
         	}
+        	/*
             try {
                 socketOut.writeObject("First Questions");
                 responses.add((String)socketIn.readObject());
@@ -109,6 +116,7 @@ public class SocketHandler implements Runnable {
                 }
             } catch (Exception e) {
             }
+            */
     }
 
     /**

@@ -2,6 +2,7 @@ package userClient;
 
 import java.io.*;
 import java.net.*;
+import java.util.Scanner;
 
 import util.Message;
 import util.Survey;
@@ -19,6 +20,7 @@ public class ClientController {
     private Socket aSocket;
     private ObjectInputStream socketIn;
     BufferedReader inFromUser;
+    Scanner input;
 
 
     /**
@@ -46,22 +48,38 @@ public class ClientController {
      * @throws ClassNotFoundException 
      */
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        ClientController cc = new ClientController("10.13.71.24", 9000);
+        ClientController cc = new ClientController("192.168.86.34", 9000);
         cc.communicateWithServer();
     }
 
     public void communicateWithServer() throws IOException, ClassNotFoundException {
-    	Message userMess = new Message();
+    	input = new Scanner(System.in);
+    	Message first = new Message("Hello from client");
+    	socketOut.writeObject(first);
+    	socketOut.flush();
+    	Message userMess = (Message)socketIn.readObject();
     	Message returnTo = new Message();
-    	userMess = (Message)(socketIn.readObject());
+    	System.out.println(userMess.getAction());
+    	String userIn = input.nextLine();
+    	returnTo.setAction(userIn);
+    	socketOut.reset();
+    	//socketIn.reset();
+    	socketOut.writeObject(returnTo);
     	Survey sur = new Survey();
+    	socketOut.flush();
+    	Message userX = (Message)socketIn.readObject();
+    	System.out.println(userX.getAction());
+    	/*
     	if(userMess.getAction().compareToIgnoreCase("Please Complete our survey") == 0) {
     		sur.fillOutSurvey();
     	} else {
     		System.out.println("Error");
     		System.exit(1);
     	}
-    	socketOut.writeObject(sur);
+    	*/
+    	sur.fillOutSurvey();
+    	socketOut.writeObject(sur.getSurAns());
+    	socketOut.flush();
     	userMess = (Message)(socketIn.readObject());
     	if(userMess.getAction().compareToIgnoreCase("Recieved") == 0) {
     		System.out.println("Survey completed, Exiting");
