@@ -3,6 +3,9 @@ package userClient;
 import java.io.*;
 import java.net.*;
 
+import util.Message;
+import util.Survey;
+
 /**
  * This class is responsible for communicating with the server
  * and holding the LoginController
@@ -48,6 +51,26 @@ public class ClientController {
     }
 
     public void communicateWithServer() throws IOException, ClassNotFoundException {
+    	Message userMess = new Message();
+    	Message returnTo = new Message();
+    	userMess = (Message)(socketIn.readObject());
+    	Survey sur = new Survey();
+    	if(userMess.getAction().compareToIgnoreCase("Please Complete our survey") == 0) {
+    		sur.fillOutSurvey();
+    	} else {
+    		System.out.println("Error");
+    		System.exit(1);
+    	}
+    	socketOut.writeObject(sur);
+    	userMess = (Message)(socketIn.readObject());
+    	if(userMess.getAction().compareToIgnoreCase("Recieved") == 0) {
+    		System.out.println("Survey completed, Exiting");
+    		socketOut.close();
+    		socketIn.close();
+    		aSocket.close();
+    		System.exit(1);
+    	}
+    	/*
         String line;
         String ServerE;
         ServerE = (String)(socketIn.readObject());
@@ -69,7 +92,7 @@ public class ClientController {
         //System.out.println("Quesiton 3");
         line = inFromUser.readLine();
         socketOut.writeObject(line);
-
+        */
     }
 
     //GETTERS AND SETTERS

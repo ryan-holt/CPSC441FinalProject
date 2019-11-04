@@ -10,12 +10,17 @@ import java.util.ArrayList;
  */
 public class SurveyQuestions extends Message{
     ArrayList<String> surveyQuestionList;
+    String[] validResponseQ1  = {"Python", "Java", "Word", "Excel"};
+    String[] validResponseQ2  = {"Walmart", "Dollarama", "Staples", "Rolex"};
+    String[] validResponseQ3  = {"Foosball", "Tetris", "Poker", "Smash"};
+    String[] validResponseQ4  = {"Soccer", "Boxing", "Running", "Swimming"};
+    
 
     public SurveyQuestions() {
         super("sendSurveyQuestions");
         surveyQuestionList = new ArrayList<String>();
         surveyQuestionList.add("What do you use at work? Please pick from Python, Java, Word or Excel");
-        surveyQuestionList.add("Which of the following stores have you went to in the past month? Please pick from Walmart, Dollarama or Rolex and put spaces between them");
+        surveyQuestionList.add("Which of the following stores have you went to in the past month? Please pick from Walmart, Dollarama, Staples or Rolex and put spaces between them");
         surveyQuestionList.add("Which of the following is your favorite office hobby?  Please pick from Foosball, Tetris, Poker or Smash and put spaces between them");
         surveyQuestionList.add("What is your favorite physical activity?  Please pick from Soccer, Boxing, Running or Swimming and put spaces between them");
     }

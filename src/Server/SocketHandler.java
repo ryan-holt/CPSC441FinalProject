@@ -47,8 +47,8 @@ public class SocketHandler implements Runnable {
         		socketOut.writeObject(action);
         		returnAction = (Message)socketIn.readObject();
         		boolean endWhile = true;
-        		SurveyQuestions surQues = new SurveyQuestions();
-        		if(returnAction.getAction().compareToIgnoreCase("admin") ==  1) {
+        		Survey sur = new Survey();
+        		if(returnAction.getAction().compareToIgnoreCase("admin") ==  0) {
         			action.setAction("Please enter one of the following actions: calculateCorrelation, listHistoricalCorrelation, viewHistoricalCorrelation or Quit");
         			while(endWhile) {
         				try {
@@ -80,6 +80,10 @@ public class SocketHandler implements Runnable {
         			}
         		} else {
         			action.setAction("Please Complete our survey");
+        			socketOut.writeObject(sur);
+        			sur = (Survey)socketIn.readObject();
+        			action.setAction("Recieved");
+        			socketOut.writeObject(action);
         			//socketOut.writeObject()
         		}
         		socketIn.close();
