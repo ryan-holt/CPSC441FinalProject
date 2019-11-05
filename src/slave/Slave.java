@@ -1,7 +1,10 @@
 package slave;
 
+/**
+ * Starting point for the slave program
+ */
 public class Slave {
 	public static void main(String[] args) {
-		// TODO Start the slave server
+		SlaveController slaveController = new SlaveController();
 	}
 }
