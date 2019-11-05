@@ -1,5 +1,7 @@
 package Master;
 
+import util.MessageListener;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -13,11 +15,13 @@ import java.util.concurrent.Executors;
  * this class makes an instance of the ServerCommunicationController
  * for the client in a new thread hi
  */
-public class MasterController {
+public class MasterController implements MessageListener {
 
     private static final int PORT = 9000;
     private ServerSocket serverSocket;
     private ExecutorService pool;
+
+
 
     public MasterController() {
         try {
@@ -30,11 +34,6 @@ public class MasterController {
             System.out.println("ServerController: Create a new socket error");
             e.printStackTrace();
         }
-    }
-
-    public static void main(String[] args) {
-        MasterController myServer = new MasterController();
-        myServer.communicateWithClient();
     }
 
     public void communicateWithClient() {
@@ -63,4 +62,9 @@ public class MasterController {
         }
     }
 
+
+    public static void main(String[] args) {
+        MasterController myServer = new MasterController();
+        myServer.communicateWithClient();
+    }
 }
