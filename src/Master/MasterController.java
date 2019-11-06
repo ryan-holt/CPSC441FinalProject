@@ -1,6 +1,7 @@
 package Master;
 
 import util.*;
+import util.sockethandler.ServerSocketHandler;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -38,12 +39,12 @@ public class MasterController implements MessageListener {
         try {
             while (true) {
 //                OLD_SocketHandler_again scc = new OLD_SocketHandler_again(serverSocket.accept(), this); // TODO delete
-	            SocketHandler socketHandler = new SocketHandler(serverSocket.accept(), this);
+	            ServerSocketHandler serverSocketHandler = new ServerSocketHandler(serverSocket.accept(), this);
 
                 System.out.println("New Client Connected");
 
 //                pool.execute(scc); // TODO delete
-                pool.execute(socketHandler);
+                pool.execute(serverSocketHandler);
             }
         } catch (IOException e) {
             System.out.println("ServerController: CommunicateWithClient error");

@@ -1,6 +1,7 @@
 package slave;
 
 import util.*;
+import util.sockethandler.ServerSocketHandler;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -32,13 +33,13 @@ public class SlaveController implements MessageListener {
 
 	public void communicateWithClient() {
 		try {
-//			while (true) {
-				SocketHandler socketHandler = new SocketHandler(serverSocket.accept(), this);
+			while (true) {
+				ServerSocketHandler serverSocketHandler = new ServerSocketHandler(serverSocket.accept(), this);
 				System.out.println("New Master Client Connected");
-//				pool.execute(socketHandler);
+				pool.execute(serverSocketHandler);
 
-				socketHandler.run(); // FIXME remove this multithreading stuff that we don't need
-//			}
+//				serverSocketHandler.run(); // FIXME remove this multithreading stuff that we don't need
+			}
 		} catch (IOException e) {
 			System.err.println("SlaveController: CommunicateWithClient error");
 			e.printStackTrace();

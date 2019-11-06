@@ -44,25 +44,28 @@ public class DummyClient {
 	 * @throws ClassNotFoundException
 	 */
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
-		DummyClient client = new DummyClient("localhost", 9000);
+		DummyClient client = new DummyClient("localhost", 9001);
 		client.communicateWithServer();
 	}
 
 	public void communicateWithServer() throws IOException, ClassNotFoundException {
 		Message msgOut = new Message("test");
+		System.out.println("DummyClient: sending message test");
+
 		writeObject(msgOut);
+		System.out.println("DummyClient: waiting for response...");
 		Message msgIn = (Message) socketIn.readObject();
 		System.out.println("DummyClient: msgIn action is: " + msgIn.getAction());
-		msgOut.setAction("quit");
-		writeObject(msgOut);
-		msgIn = (Message) socketIn.readObject();
-		System.out.println("DummyClient: msgIn action is: " + msgIn.getAction());
-		if (msgIn.getAction().equals("terminate")) {
-			System.out.println("DummyClient: Received termination, dying");
-			socketIn.close();
-			socketOut.close();
-			socket.close();
-		}
+//		msgOut.setAction("quit");
+//		writeObject(msgOut);
+//		msgIn = (Message) socketIn.readObject();
+//		System.out.println("DummyClient: msgIn action is: " + msgIn.getAction());
+//		if (msgIn.getAction().equals("terminate")) {
+//			System.out.println("DummyClient: Received termination, dying");
+//			socketIn.close();
+//			socketOut.close();
+//			socket.close();
+//		}
 	}
 
 
