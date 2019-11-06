@@ -2,3 +2,15 @@
 2	Gary	Rolex,Walmart
 3	Gary	Smash
 4	Gary	Running
+1	Tyler	Python
+2	Tyler	Rolex
+3	Tyler	Tetris
+4	Tyler	Boxing,Running
+1	Tyler	Python,Java
+2	Tyler	Walmart
+3	Tyler	Poker
+4	Tyler	Soccer,Boxing
+1	Lee	Excel,Python
+2	Lee	Walmart
+3	Lee	Poker
+4	Lee	Swimming

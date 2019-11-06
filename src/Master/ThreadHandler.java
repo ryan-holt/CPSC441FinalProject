@@ -13,7 +13,7 @@ import java.util.concurrent.Executors;
  * this class makes an instance of the ServerCommunicationController
  * for the client in a new thread hi
  */
-public class MasterController {
+public class ThreadHandler {
 
     /**
      * The socket port used for communication
@@ -30,7 +30,7 @@ public class MasterController {
      */
     private ExecutorService pool;
 
-    public MasterController() {
+    public ThreadHandler() {
         try {
             serverSocket = new ServerSocket(PORT);
             pool = Executors.newFixedThreadPool(10);
@@ -44,7 +44,7 @@ public class MasterController {
     }
 
     public static void main(String[] args) {
-        MasterController myServer = new MasterController();
+        ThreadHandler myServer = new ThreadHandler();
         myServer.communicateWithClient();
     }
 
@@ -54,7 +54,7 @@ public class MasterController {
     public void communicateWithClient() {
         try {
             while (true) {
-                SocketHandler scc = new SocketHandler(serverSocket.accept(), this);
+                Controller scc = new Controller(serverSocket);
 
                 System.out.println("New Client Connected");
 
