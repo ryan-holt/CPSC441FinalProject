@@ -15,102 +15,60 @@ import java.net.UnknownHostException;
  * A new instance of this class is appointed to each client in an
  * independent thread.
  */
-public class ClientSocketHandler implements Runnable {
+public class ClientSocketHandler extends SocketHandler {
 
-	private Socket socket;
-	private ObjectInputStream socketIn;
-	private ObjectOutputStream socketOut;
+	private boolean loopCommunication;
 
-	private MessageListener listener;
-
-	private boolean shouldRun;
+	private Message msgOut;
+	private Message lastMsgIn;
 
 	public ClientSocketHandler(Socket socket, MessageListener listener) {
-		try {
-			this.socket = socket;
-			socketOut = new ObjectOutputStream(socket.getOutputStream());
-			socketIn = new ObjectInputStream(socket.getInputStream());
-
-			printIPInfo();
-		} catch (IOException e) {
-			System.out.println("ClientSocketHandler: Create socketOut/socketIn failed");
-			e.printStackTrace();
-		}
-
-		this.listener = listener;
-		shouldRun = true;
+		this(socket, listener, false);
 	}
 
-
-	private Message notifyListener(Message msg) {
-		return listener.handleMessage(msg);
+	public ClientSocketHandler(Socket socket, MessageListener listener, boolean loopCommunication) {
+		super(socket, listener);
+		this.loopCommunication = loopCommunication;
 	}
 
-	@Override
-	public void run() {
-//        createInputStream();
-		communicate();
+	public Message getMsgOut() {
+		return msgOut;
+	}
+
+	public void setMsgOut(Message msgOut) {
+		this.msgOut = msgOut;
+	}
+
+	public Message getLastMsgIn() {
+		return lastMsgIn;
 	}
 
 	public void communicate() {
-		while (shouldRun) {
-			try {
-				Message msgIn = readMessage();
-				Message msgOut = notifyListener(msgIn);
-
-				writeMessage(msgOut);
-				if (msgOut.getAction().equals("terminate")) {
-					stop();
-				}
-			} catch (IOException e) {
-				System.err.println("Slave ServerSocketHandler error:");
-				e.printStackTrace();
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
+		if (loopCommunication) {
+			while (shouldRun) {
+				writeAndReadMsg();
 			}
+		} else {
+			writeAndReadMsg();
 		}
 	}
 
-	/**
-	 * Creates an input socket stream from server
-	 */
-	public void createInputStream() {
+	private void writeAndReadMsg() {
 		try {
-			socketIn = new ObjectInputStream(socket.getInputStream());
+			Message msgOut = getMsgOut();
+			writeMessage(msgOut);
+			if (msgOut.getAction().equals("terminate")) {
+				stop();
+			}
+			Message msgIn = readMessage();
+			lastMsgIn = msgIn;
+			notifyListener(msgIn); // Let the listener handle the message but don't do anything with it
+
 		} catch (IOException e) {
-			System.out.println("Error creating server output stream");
+			System.err.println("Slave ServerSocketHandler error:");
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-	}
-
-	public void printIPInfo() {
-		InetAddress ip;
-		try {
-			ip = InetAddress.getLocalHost();
-			System.out.println("You current IP address: " + ip);
-		} catch (UnknownHostException e) {
-			System.out.println("IP Print error");
-			e.printStackTrace();
-		}
-	}
-
-	public void stop() throws IOException {
-		shouldRun = false;
-		socket.close();
-		socketIn.close();
-		socketOut.close();
-	}
-
-	private Message readMessage() throws IOException, ClassNotFoundException {
-		return (Message) socketIn.readObject();
-	}
-
-	private void writeMessage(Message msg) throws IOException {
-		writeObject(msg);
-	}
-
-	private void writeObject(Object obj) throws IOException {
-		socketOut.writeObject(obj);
-		socketOut.reset();
 	}
 }
