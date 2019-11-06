@@ -3,7 +3,6 @@ package userClient;
 import util.*;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,7 +19,7 @@ public class ClientController implements MessageListener {
     private ObjectOutputStream socketOut;
     private Socket aSocket;
     private ObjectInputStream socketIn;
-    private String name;
+    private String user;
     BufferedReader inFromUser;
 
 
@@ -58,16 +57,17 @@ public class ClientController implements MessageListener {
 	}
 
     public void communicateWithServer() throws IOException, ClassNotFoundException {
-        Message msg = (Message)(socketIn.readObject());
-        System.out.println(msg.getAction());
-        msg.setAction(inFromUser.readLine());
-        name = msg.getAction();
-        writeObject(msg);
-        SurveyQuestions incomingSurvey = (SurveyQuestions) socketIn.readObject();
-        ArrayList<SurveyEntry> userSurveyAnswers = getSurveyAnswer(incomingSurvey);
-        SurveyAnswer userAnswer = new SurveyAnswer(userSurveyAnswers);
-        writeObject(userAnswer);
-        System.out.println("Survey has been completed. Have a great day!");
+        //
+//        Message msg = (Message)(socketIn.readObject());
+//        System.out.println(msg.getAction());
+//        msg.setAction(inFromUser.readLine());
+//        user = msg.getAction();
+//        writeObject(msg);
+//        SurveyQuestions incomingSurvey = (SurveyQuestions) socketIn.readObject();
+//        ArrayList<SurveyEntry> userSurveyAnswers = getSurveyAnswer(incomingSurvey);
+//        SurveyAnswer userAnswer = new SurveyAnswer(userSurveyAnswers);
+//        writeObject(userAnswer);
+//        System.out.println("Survey has been completed. Have a great day!");
     }
 
     //GETTERS AND SETTERS
@@ -94,7 +94,7 @@ public class ClientController implements MessageListener {
                     continue;
                 }
                 invalidResponse = false;
-                userAnswers.add(new SurveyEntry(name, i+1, currentQuestionResponses));
+                userAnswers.add(new SurveyEntry(user, i+1, currentQuestionResponses));
             }
         }
         return userAnswers;
