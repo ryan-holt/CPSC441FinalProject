@@ -14,7 +14,7 @@ import java.util.Arrays;
  * Overall the client controller is used for communication with
  * the server
  */
-public class ClientController {
+public class ClientController implements MessageListener {
 
     //MEMBER VARIABLES
     private ObjectOutputStream socketOut;
@@ -52,6 +52,10 @@ public class ClientController {
         ClientController cc = new ClientController("localhost", 9000);
         cc.communicateWithServer();
     }
+
+	public Message handleMessage(Message msg) {
+    	return null;
+	}
 
     public void communicateWithServer() throws IOException, ClassNotFoundException {
         Message msg = (Message)(socketIn.readObject());
