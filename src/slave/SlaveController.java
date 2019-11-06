@@ -1,6 +1,5 @@
 package slave;
 
-import com.sun.security.ntlm.Server;
 import util.*;
 
 import java.io.IOException;

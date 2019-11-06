@@ -1,4 +1,4 @@
-package slave;
+package util;
 
 import util.Message;
 import util.MessageListener;
@@ -27,19 +27,22 @@ public class SocketHandler implements Runnable {
 
     private MessageListener listener;
 
+    private boolean shouldRun;
+
     public SocketHandler(Socket socket, MessageListener listener) {
-        try {
-            socket = socket;
+    	try {
+            this.socket = socket;
             socketOut = new ObjectOutputStream(socket.getOutputStream());
             socketIn = new ObjectInputStream(socket.getInputStream());
 
             printIPInfo();
         } catch (IOException e) {
-            System.out.println("Slave SocketHandler: Create socketOut/socketIn failed");
+            System.out.println("SocketHandler: Create socketOut/socketIn failed");
             e.printStackTrace();
         }
 
 	    this.listener = listener;
+    	shouldRun = true;
     }
 
 
@@ -54,18 +57,21 @@ public class SocketHandler implements Runnable {
     }
 
     public void communicate() {
-		while (true) {
+		while (shouldRun) {
 			try {
 				Message msgIn = readMessage();
 				Message msgOut = notifyListener(msgIn);
+
 				writeMessage(msgOut);
+				if (msgOut.getAction().equals("terminate")) {
+					stop();
+				}
 			} catch (IOException e) {
 				System.err.println("Slave SocketHandler error:");
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
-
 		}
     }
 
@@ -93,7 +99,10 @@ public class SocketHandler implements Runnable {
     }
 
     public void stop() throws IOException {
+    	shouldRun = false;
         socket.close();
+        socketIn.close();
+        socketOut.close();
     }
 
     private Message readMessage() throws IOException, ClassNotFoundException {

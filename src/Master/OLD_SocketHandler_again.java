@@ -11,7 +11,7 @@ import util.*;
  * A new instance of this class is appointed to each client in an
  * independent thread.
  */
-public class SocketHandler implements Runnable {
+public class OLD_SocketHandler_again implements Runnable {
 
     private Socket aSocket;
     private ObjectInputStream socketIn;
@@ -19,7 +19,7 @@ public class SocketHandler implements Runnable {
     private MasterController masterController;
     private FileHandler fileHandler;
 
-    public SocketHandler(Socket s, MasterController masterController) {
+    public OLD_SocketHandler_again(Socket s, MasterController masterController) {
         try {
             aSocket = s;
             setMasterController(masterController);

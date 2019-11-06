@@ -1,6 +1,6 @@
 package Master;
 
-import util.MessageListener;
+import util.*;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -21,8 +21,6 @@ public class MasterController implements MessageListener {
     private ServerSocket serverSocket;
     private ExecutorService pool;
 
-
-
     public MasterController() {
         try {
             serverSocket = new ServerSocket(PORT);
@@ -39,11 +37,13 @@ public class MasterController implements MessageListener {
     public void communicateWithClient() {
         try {
             while (true) {
-                SocketHandler scc = new SocketHandler(serverSocket.accept(), this);
+//                OLD_SocketHandler_again scc = new OLD_SocketHandler_again(serverSocket.accept(), this); // TODO delete
+	            SocketHandler socketHandler = new SocketHandler(serverSocket.accept(), this);
 
                 System.out.println("New Client Connected");
 
-                pool.execute(scc);
+//                pool.execute(scc); // TODO delete
+                pool.execute(socketHandler);
             }
         } catch (IOException e) {
             System.out.println("ServerController: CommunicateWithClient error");
@@ -62,6 +62,57 @@ public class MasterController implements MessageListener {
         }
     }
 
+    public Message handleMessage(Message msg) {
+    	Message msgOut = new Message("");
+	    switch (msg.getAction()) {
+		    case "requestSurvey":
+				msgOut = createSurveyQuestions();
+		    	break;
+		    case "saveSurveyAnswers":
+		    	writeSurveyAnswerToFile((SurveyAnswer) msg);
+		    	msgOut.setAction("quit");
+		    	break;
+		    case "calculateCorrelation":
+			    //Insert code to calculate correlations
+			    break;
+		    case "listHistoricalCorrelation":
+			    //Insert code to do that
+			    break;
+		    case "viewHistoricalCorrelation":
+			    //Insert code to do that
+			    break;
+		    // TODO Handle quit (client dies) vs terminate (server dies) commands
+		    case "quit":
+			    msgOut.setAction("terminate");
+		    	break;
+	        case "termiante":
+				msgOut.setAction("terminate");
+			    break;
+		    case "test":
+		    	msgOut.setAction("masterControllerTestResponse");
+		    	break;
+		    default:
+			    System.err.println("Error, unknown message action " + msg.getAction() + ", terminating");
+			    msgOut.setAction("terminate");
+			    break;
+	    }
+
+	    return msgOut;
+    }
+
+    private SurveyQuestions createSurveyQuestions() {
+    	return new SurveyQuestions();
+    }
+
+    private void writeSurveyAnswerToFile(SurveyAnswer surveyAnswer) {
+	    FileHandler fileHandler = new FileHandler();
+	    try {
+		    fileHandler.writeArrayToFile(surveyAnswer.getAnswer());
+	    } catch (IOException e) {
+		    System.err.println("Error: FileHandler failed to write survey answers to file");
+	    	e.printStackTrace();
+	    }
+    }
 
     public static void main(String[] args) {
         MasterController myServer = new MasterController();
