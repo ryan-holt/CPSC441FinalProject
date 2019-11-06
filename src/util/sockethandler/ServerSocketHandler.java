@@ -21,13 +21,9 @@ public class ServerSocketHandler extends SocketHandler {
     }
 
     public void communicate() {
-	    System.out.println("!!! communicate() started, shouldRun: " + shouldRun); // FIXME delete
 		while (shouldRun) {
-			System.out.println("!!! communicate() inside shouldRun loop"); // FIXME delete
 			try {
-				System.out.println("!!! communicate(), waiting for message in"); // FIXME DELETE
 				Message msgIn = readMessage();
-				System.out.println("!!! communicate(), message received!"); // FIXME delete
 				Message msgOut = notifyListener(msgIn);
 
 				writeMessage(msgOut);

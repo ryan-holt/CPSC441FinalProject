@@ -43,7 +43,6 @@ abstract class SocketHandler implements Runnable {
 	@Override
 	public void run() {
 //        createInputStream();
-		System.out.println("!!! run() started"); // FIXME delete
 		communicate();
 	}
 
