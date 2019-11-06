@@ -13,10 +13,29 @@ import util.*;
  */
 public class SocketHandler implements Runnable {
 
+    /**
+     * The socket used for general input and output communication
+     */
     private Socket aSocket;
+
+    /**
+     * The input socket used for reading in messages from slave and client
+     */
     private ObjectInputStream socketIn;
+
+    /**
+     * the output socket used for sending out messages to slave and client
+     */
     private ObjectOutputStream socketOut;
+
+    /**
+     * Master Controller
+     */
     private MasterController masterController;
+
+    /**
+     * File Handler used to handle files writing and reading into database
+     */
     private FileHandler fileHandler;
 
     public SocketHandler(Socket s, MasterController masterController) {
@@ -39,6 +58,10 @@ public class SocketHandler implements Runnable {
         communicate();
     }
 
+    /**
+     * Continously reads in and sends out messages to the client and slaves.
+     * Depending on the messages receives, different choices will be made
+     */
     public void communicate() {
         ArrayList<String> responses = new ArrayList<String>();
         Message messageToSend = new Message("Please enter your name");
@@ -76,11 +99,7 @@ public class SocketHandler implements Runnable {
                     }
                 }
             } else {
-                SurveyQuestions newSurvey = new SurveyQuestions();
-                writeObject(newSurvey);
-                SurveyAnswer clientAnswer = (SurveyAnswer) socketIn.readObject();
-                fileHandler = new FileHandler();
-                fileHandler.writeArrayToFile(clientAnswer.getAnswer());
+                createAndSendSurvey();
             }
             socketIn.close();
             socketOut.close();
@@ -88,6 +107,19 @@ public class SocketHandler implements Runnable {
             System.exit(1);
         } catch (Exception e) {
         }
+    }
+
+    /**
+     * Creates the survey questions object and sends to the survey
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public void createAndSendSurvey() throws IOException, ClassNotFoundException {
+        SurveyQuestions newSurvey = new SurveyQuestions();
+        writeObject(newSurvey);
+        SurveyAnswer clientAnswer = (SurveyAnswer) socketIn.readObject();
+        fileHandler = new FileHandler();
+        fileHandler.writeArrayToFile(clientAnswer.getAnswer());
     }
 
     /**
@@ -102,6 +134,9 @@ public class SocketHandler implements Runnable {
         }
     }
 
+    /**
+     * Prints the IP information (current IP address)
+     */
     public void printIPInfo() {
         InetAddress ip;
         try {
@@ -113,15 +148,27 @@ public class SocketHandler implements Runnable {
         }
     }
 
-    //GETTERS AND SETTERS
+    /**
+     * Sets the master controller
+     * @param sc master controller object
+     */
     public void setMasterController(MasterController sc) {
         masterController = sc; // 2-way association
     }
 
+    /**
+     * Closes the socket
+     * @throws IOException
+     */
     public void stop() throws IOException {
         aSocket.close();
     }
 
+    /**
+     * Writes the corresponding object to the output socket
+     * @param obj The output object
+     * @throws IOException
+     */
     private void writeObject(Object obj) throws IOException {
         socketOut.writeObject(obj);
         socketOut.reset();

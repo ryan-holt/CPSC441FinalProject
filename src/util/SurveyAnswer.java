@@ -8,6 +8,10 @@ import java.util.ArrayList;
  * @version 1.0
  */
 public class SurveyAnswer extends Message {
+
+    /**
+     * the list of all answers for all the questions
+     */
     ArrayList<SurveyEntry> answerList;
 
     public SurveyAnswer(ArrayList<SurveyEntry> answerList) {
@@ -15,6 +19,10 @@ public class SurveyAnswer extends Message {
         this.answerList = answerList;
     }
 
+    /**
+     * Returns the arraylist of answers
+     * @return the answer arraylist
+     */
     public ArrayList<SurveyEntry> getAnswer() {
         return answerList;
     }

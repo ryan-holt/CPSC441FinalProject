@@ -16,11 +16,29 @@ import java.util.Arrays;
  */
 public class ClientController {
 
-    //MEMBER VARIABLES
+    /**
+     * The output socket used for communication with master
+     */
     private ObjectOutputStream socketOut;
+
+    /**
+     * Socket used for general input/output communication
+     */
     private Socket aSocket;
+
+    /**
+     * The input socket used for receiving messages from master
+     */
     private ObjectInputStream socketIn;
+
+    /**
+     * The name of the user
+     */
     private String name;
+
+    /**
+     * BufferedReader to read in user input
+     */
     BufferedReader inFromUser;
 
 
@@ -53,6 +71,11 @@ public class ClientController {
         cc.communicateWithServer();
     }
 
+    /**
+     * Communicates with the server by reading in name, survey questions, and sending out survey answers
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
     public void communicateWithServer() throws IOException, ClassNotFoundException {
         Message msg = (Message)(socketIn.readObject());
         System.out.println(msg.getAction());
@@ -66,20 +89,16 @@ public class ClientController {
         System.out.println("Survey has been completed. Have a great day!");
     }
 
-    //GETTERS AND SETTERS
-    public ObjectOutputStream getSocketOut() {
-        return socketOut;
-    }
-
-    public ObjectInputStream getSocketIn() {
-        return socketIn;
-    }
-
+    /**
+     * Prompts the user a list of survey questions and gets the answers
+     * @param incomingSurvey
+     * @return An ArrayList of all the answers to all the questions
+     * @throws IOException
+     */
     public ArrayList<SurveyEntry> getSurveyAnswer(SurveyQuestions incomingSurvey) throws IOException {
         ArrayList<String> surveyQuestionList = incomingSurvey.getSurveyQuestionList();
         ArrayList<ArrayList<String>> surveyAnswersLists = incomingSurvey.getSurveyAnswersLists();
         ArrayList<SurveyEntry> userAnswers = new ArrayList<SurveyEntry>();
-        //ArrayList<String> allResponses = new ArrayList<String>();
         for (int i = 0; i < surveyQuestionList.size(); i++) {
             boolean invalidResponse = true;
             while (invalidResponse) {
@@ -96,6 +115,11 @@ public class ClientController {
         return userAnswers;
     }
 
+    /**
+     * Writes the corresponding object to the output socket
+     * @param obj The output object
+     * @throws IOException
+     */
     private void writeObject(Object obj) throws IOException {
         socketOut.writeObject(obj);
         socketOut.reset();
