@@ -18,8 +18,19 @@ import java.util.concurrent.Executors;
  */
 public class MasterController implements MessageListener {
 
+    /**
+     * The socket port used for communication
+     */
     private static final int PORT = 9000;
+
+    /**
+     * Server socket used for socket communication
+     */
     private ServerSocket serverSocket;
+
+    /**
+     * Pool of threads used for multithreading
+     */
     private ExecutorService pool;
 
     public MasterController() {
@@ -35,6 +46,9 @@ public class MasterController implements MessageListener {
         }
     }
 
+    /**
+     * Continously checks for new clients to add to the thread pool
+     */
     public void communicateWithClient() {
         try {
             while (true) {
@@ -52,6 +66,9 @@ public class MasterController implements MessageListener {
         }
     }
 
+    /**
+     * Prints all the IP address information
+     */
     public void printIPInfo() {
         InetAddress ip;
         try {

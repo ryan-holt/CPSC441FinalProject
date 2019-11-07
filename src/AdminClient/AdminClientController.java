@@ -49,6 +49,11 @@ public class AdminClientController {
         cc.communicateWithServer();
     }
 
+    /**
+     * Communicates with the server, by reading the user name
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
     public void communicateWithServer() throws IOException, ClassNotFoundException {
         String line;
         Message ServerE;
@@ -62,6 +67,11 @@ public class AdminClientController {
         writeObject(ServerE);
     }
 
+    /**
+     * Writes the corresponding object to the output socket
+     * @param obj The output object
+     * @throws IOException
+     */
     private void writeObject(Object obj) throws IOException {
         socketOut.writeObject(obj);
         socketOut.reset();
