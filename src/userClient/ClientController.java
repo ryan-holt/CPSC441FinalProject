@@ -1,6 +1,8 @@
 package userClient;
 
+import com.sun.deploy.util.SessionState;
 import util.*;
+import util.sockethandler.ClientSocketHandler;
 
 import java.io.*;
 import java.net.*;
@@ -16,11 +18,13 @@ import java.util.Arrays;
 public class ClientController implements MessageListener {
 
     //MEMBER VARIABLES
-    private ObjectOutputStream socketOut;
     private Socket aSocket;
-    private ObjectInputStream socketIn;
+//    private ObjectOutputStream socketOut;
+//    private ObjectInputStream socketIn;
     private String user;
     BufferedReader inFromUser;
+
+    private ClientSocketHandler clientSocketHandler;
 
 
     /**
@@ -33,12 +37,14 @@ public class ClientController implements MessageListener {
         try {
             aSocket = new Socket(serverName, portNumber);
 
-            socketIn = new ObjectInputStream(aSocket.getInputStream());
-            socketOut = new ObjectOutputStream(aSocket.getOutputStream());
+//            socketIn = new ObjectInputStream(aSocket.getInputStream());
+//            socketOut = new ObjectOutputStream(aSocket.getOutputStream());
+	        clientSocketHandler = new ClientSocketHandler(aSocket, this, false); // TODO Set this looping flag true
             inFromUser = new BufferedReader(new InputStreamReader(System.in));
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
     /**
@@ -53,11 +59,19 @@ public class ClientController implements MessageListener {
     }
 
 	public Message handleMessage(Message msg) {
-    	return null;
+		System.out.println("!!! master has replied with: " + msg.getAction());
+
+    	switch(msg.getAction()) {
+
+		    case "sendSurveyQuestions":
+		    	break;
+	    }
+
+	    return new Message("quit"); // FIXME replace
 	}
 
     public void communicateWithServer() throws IOException, ClassNotFoundException {
-        //
+        // TODO Replace with ClientSocketHandler code and delete
 //        Message msg = (Message)(socketIn.readObject());
 //        System.out.println(msg.getAction());
 //        msg.setAction(inFromUser.readLine());
@@ -68,16 +82,20 @@ public class ClientController implements MessageListener {
 //        SurveyAnswer userAnswer = new SurveyAnswer(userSurveyAnswers);
 //        writeObject(userAnswer);
 //        System.out.println("Survey has been completed. Have a great day!");
+
+		clientSocketHandler.setMsgOut(new Message("requestSurvey"));
+		clientSocketHandler.communicate();
+	    System.out.println();
     }
 
     //GETTERS AND SETTERS
-    public ObjectOutputStream getSocketOut() {
-        return socketOut;
-    }
-
-    public ObjectInputStream getSocketIn() {
-        return socketIn;
-    }
+//    public ObjectOutputStream getSocketOut() {
+//        return socketOut;
+//    }
+//
+//    public ObjectInputStream getSocketIn() {
+//        return socketIn;
+//    }
 
     public ArrayList<SurveyEntry> getSurveyAnswer(SurveyQuestions incomingSurvey) throws IOException {
         ArrayList<String> surveyQuestionList = incomingSurvey.getSurveyQuestionList();
@@ -100,9 +118,9 @@ public class ClientController implements MessageListener {
         return userAnswers;
     }
 
-    private void writeObject(Object obj) throws IOException {
-        socketOut.writeObject(obj);
-        socketOut.reset();
-    }
+//    private void writeObject(Object obj) throws IOException {
+//        socketOut.writeObject(obj);
+//        socketOut.reset();
+//    }
 
 }

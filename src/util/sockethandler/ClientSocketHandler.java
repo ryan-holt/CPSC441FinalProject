@@ -56,6 +56,7 @@ public class ClientSocketHandler extends SocketHandler {
 	private void writeAndReadMsg() {
 		try {
 			Message msgOut = getMsgOut();
+			System.out.println("!!! CLIENT writing " + msgOut.getAction()); // FIXME delete
 			writeMessage(msgOut);
 			if (msgOut.getAction().equals("terminate")) {
 				stop();

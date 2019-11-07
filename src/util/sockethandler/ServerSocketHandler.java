@@ -31,7 +31,7 @@ public class ServerSocketHandler extends SocketHandler {
 					stop();
 				}
 			} catch (IOException e) {
-				System.err.println("Slave ServerSocketHandler error:");
+				System.err.println("ServerSocketHandler error:");
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
