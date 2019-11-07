@@ -214,7 +214,7 @@ public class SocketHandler implements Runnable {
                 ArrayList<Rule> ruleCorrelationArray = new ArrayList<>();
                 ruleCorrelationArray.add(ruleResponses.get(i).getResult().get(j));
                 outputList.add(new RuleCorrelationRequest("baseRule", ruleCorrelationArray));
-                for (int k = i + 1; k <= 4; k++) {
+                for (int k = i + 1; k < 4; k++) {
                     ruleCorrelationArray = new ArrayList<>();
                     for(int l = 0; i < ruleResponses.get(k).getResult().size(); l++) {
                         ruleCorrelationArray.add(ruleResponses.get(k).getResult().get(l));
