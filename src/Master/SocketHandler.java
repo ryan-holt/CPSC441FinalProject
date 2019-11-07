@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import util.*;
 
@@ -82,6 +83,7 @@ public class SocketHandler implements Runnable {
                         switch (responseMessage.getAction()) {
                             case "calculateCorrelation":
                                 //Insert code to calculate correlations
+                                prepareAssociationRuleRequests();
                                 break;
                             case "listHistoricalCorrelation":
                                 //Insert code to do that
@@ -149,6 +151,7 @@ public class SocketHandler implements Runnable {
             }
             orderedEntries.get(entries.get(i).getQuestion()).add(entries.get(i));
         }
+        System.out.println("HashMap orderedEntriesByQuestion: " + orderedEntries.keySet());
         return orderedEntries;
     }
 
@@ -173,6 +176,7 @@ public class SocketHandler implements Runnable {
                 }
             }
         }
+        System.out.println("HashMap keywordGroups: " + keywordGroups.keySet());
         return keywordGroups;
     }
 
@@ -187,6 +191,7 @@ public class SocketHandler implements Runnable {
         for(int i = 0; i < 4; i++) {
             associationRulePackage.add(new AssociationRuleRequest(i+1,keywordsByQuestion.get(i+1), entriesByQuestion.get(i+1)));
         }
+        System.out.println("ArrayList associationRulePackage: " + associationRulePackage);
         return associationRulePackage;
     }
 
@@ -197,7 +202,29 @@ public class SocketHandler implements Runnable {
         System.out.println("Sending rule requests to slaves.");
     }
 
-
+    /**
+     * Returns an arraylist of rule correlation requests
+     * @param ruleResponses the rule responses
+     * @return the arraylist of rule correlation requests
+     */
+    ArrayList<RuleCorrelationRequest> createRuleCorrelationRequests(Map<Integer, AssociationRuleResponse> ruleResponses) {
+        ArrayList<RuleCorrelationRequest> outputList = new ArrayList<RuleCorrelationRequest>();
+        for(int i = 0; i < 3; i++) {
+            for(int j=0; j < ruleResponses.get(i).getResult().size(); i++) {
+                ArrayList<Rule> ruleCorrelationArray = new ArrayList<>();
+                ruleCorrelationArray.add(ruleResponses.get(i).getResult().get(j));
+                outputList.add(new RuleCorrelationRequest("baseRule", ruleCorrelationArray));
+                for (int k = i + 1; k <= 4; k++) {
+                    ruleCorrelationArray = new ArrayList<>();
+                    for(int l = 0; i < ruleResponses.get(k).getResult().size(); l++) {
+                        ruleCorrelationArray.add(ruleResponses.get(k).getResult().get(l));
+                    }
+                    outputList.add(new RuleCorrelationRequest("rule", ruleCorrelationArray));
+                }
+            }
+        }
+        return outputList;
+    }
 
     /**
      * Creates an input socket stream from server
