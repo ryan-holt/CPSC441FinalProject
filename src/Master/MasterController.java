@@ -1,5 +1,8 @@
 package Master;
 
+import util.*;
+import util.sockethandler.ServerSocketHandler;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -13,7 +16,7 @@ import java.util.concurrent.Executors;
  * this class makes an instance of the ServerCommunicationController
  * for the client in a new thread hi
  */
-public class MasterController {
+public class MasterController implements MessageListener {
 
     /**
      * The socket port used for communication
@@ -43,22 +46,19 @@ public class MasterController {
         }
     }
 
-    public static void main(String[] args) {
-        MasterController myServer = new MasterController();
-        myServer.communicateWithClient();
-    }
-
     /**
      * Continously checks for new clients to add to the thread pool
      */
     public void communicateWithClient() {
         try {
             while (true) {
-                SocketHandler scc = new SocketHandler(serverSocket.accept(), this);
+//                OLD_SocketHandler_again scc = new OLD_SocketHandler_again(serverSocket.accept(), this); // TODO delete
+	            ServerSocketHandler serverSocketHandler = new ServerSocketHandler(serverSocket.accept(), this);
 
                 System.out.println("New Client Connected");
 
-                pool.execute(scc);
+//                pool.execute(scc); // TODO delete
+                pool.execute(serverSocketHandler);
             }
         } catch (IOException e) {
             System.out.println("ServerController: CommunicateWithClient error");
@@ -80,4 +80,60 @@ public class MasterController {
         }
     }
 
+    public Message handleMessage(Message msg) {
+    	Message msgOut = new Message("");
+	    switch (msg.getAction()) {
+		    case "requestSurvey":
+				msgOut = createSurveyQuestions();
+		    	break;
+		    case "saveSurveyAnswers":
+		    	writeSurveyAnswerToFile((SurveyAnswer) msg);
+		    	msgOut.setAction("quit");
+		    	break;
+		    case "calculateCorrelation":
+			    //Insert code to calculate correlations
+			    break;
+		    case "listHistoricalCorrelation":
+			    //Insert code to do that
+			    break;
+		    case "viewHistoricalCorrelation":
+			    //Insert code to do that
+			    break;
+		    // TODO Handle quit (client dies) vs terminate (server dies) commands
+		    case "quit":
+			    msgOut.setAction("terminate");
+		    	break;
+	        case "termiante":
+				msgOut.setAction("terminate");
+			    break;
+		    case "test":
+		    	msgOut.setAction("masterControllerTestResponse");
+		    	break;
+		    default:
+			    System.err.println("Error, unknown message action " + msg.getAction() + ", terminating");
+			    msgOut.setAction("terminate");
+			    break;
+	    }
+
+	    return msgOut;
+    }
+
+    private SurveyQuestions createSurveyQuestions() {
+    	return new SurveyQuestions();
+    }
+
+    private void writeSurveyAnswerToFile(SurveyAnswer surveyAnswer) {
+	    FileHandler fileHandler = new FileHandler();
+	    try {
+		    fileHandler.writeArrayToFile(surveyAnswer.getAnswer());
+	    } catch (IOException e) {
+		    System.err.println("Error: FileHandler failed to write survey answers to file");
+	    	e.printStackTrace();
+	    }
+    }
+
+    public static void main(String[] args) {
+        MasterController myServer = new MasterController();
+        myServer.communicateWithClient();
+    }
 }

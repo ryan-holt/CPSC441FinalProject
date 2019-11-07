@@ -1,9 +1,10 @@
 package userClient;
 
+import com.sun.deploy.util.SessionState;
 import util.*;
+import util.sockethandler.ClientSocketHandler;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,33 +15,31 @@ import java.util.Arrays;
  * Overall the client controller is used for communication with
  * the server
  */
-public class ClientController {
+public class ClientController implements MessageListener {
 
     /**
      * The output socket used for communication with master
      */
-    private ObjectOutputStream socketOut;
+//    private ObjectOutputStream socketOut;
 
-    /**
-     * Socket used for general input/output communication
-     */
     private Socket aSocket;
 
     /**
      * The input socket used for receiving messages from master
      */
-    private ObjectInputStream socketIn;
+//    private ObjectInputStream socketIn;
 
     /**
      * The name of the user
      */
-    private String name;
+    private String user;
 
     /**
      * BufferedReader to read in user input
      */
     BufferedReader inFromUser;
 
+    private ClientSocketHandler clientSocketHandler;
 
     /**
      * Constructs a Client controller object
@@ -52,12 +51,14 @@ public class ClientController {
         try {
             aSocket = new Socket(serverName, portNumber);
 
-            socketIn = new ObjectInputStream(aSocket.getInputStream());
-            socketOut = new ObjectOutputStream(aSocket.getOutputStream());
+//            socketIn = new ObjectInputStream(aSocket.getInputStream());
+//            socketOut = new ObjectOutputStream(aSocket.getOutputStream());
+	        clientSocketHandler = new ClientSocketHandler(aSocket, this, false); // TODO Set this looping flag true
             inFromUser = new BufferedReader(new InputStreamReader(System.in));
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
     /**
@@ -71,24 +72,40 @@ public class ClientController {
         cc.communicateWithServer();
     }
 
+	public Message handleMessage(Message msg) {
+		System.out.println("!!! master has replied with: " + msg.getAction());
+
+    	switch(msg.getAction()) {
+
+		    case "sendSurveyQuestions":
+		    	break;
+	    }
+
+	    return new Message("quit"); // FIXME replace
+	}
+
     /**
      * Communicates with the server by reading in name, survey questions, and sending out survey answers
      * @throws IOException
      * @throws ClassNotFoundException
      */
     public void communicateWithServer() throws IOException, ClassNotFoundException {
-        Message msg = (Message)(socketIn.readObject());
-        System.out.println(msg.getAction());
-        msg.setAction(inFromUser.readLine());
-        name = msg.getAction();
-        writeObject(msg);
-        SurveyQuestions incomingSurvey = (SurveyQuestions) socketIn.readObject();
-        ArrayList<SurveyEntry> userSurveyAnswers = getSurveyAnswer(incomingSurvey);
-        SurveyAnswer userAnswer = new SurveyAnswer(userSurveyAnswers);
-        writeObject(userAnswer);
-        System.out.println("Survey has been completed. Have a great day!");
-    }
+        // TODO Replace with ClientSocketHandler code and delete
+//        Message msg = (Message)(socketIn.readObject());
+//        System.out.println(msg.getAction());
+//        msg.setAction(inFromUser.readLine());
+//        user = msg.getAction();
+//        writeObject(msg);
+//        SurveyQuestions incomingSurvey = (SurveyQuestions) socketIn.readObject();
+//        ArrayList<SurveyEntry> userSurveyAnswers = getSurveyAnswer(incomingSurvey);
+//        SurveyAnswer userAnswer = new SurveyAnswer(userSurveyAnswers);
+//        writeObject(userAnswer);
+//        System.out.println("Survey has been completed. Have a great day!");
 
+		clientSocketHandler.setMsgOut(new Message("requestSurvey"));
+		clientSocketHandler.communicate();
+	    System.out.println();
+    }
     /**
      * Prompts the user a list of survey questions and gets the answers
      * @param incomingSurvey
@@ -109,20 +126,9 @@ public class ClientController {
                     continue;
                 }
                 invalidResponse = false;
-                userAnswers.add(new SurveyEntry(name, i+1, currentQuestionResponses));
+                userAnswers.add(new SurveyEntry(user, i+1, currentQuestionResponses));
             }
         }
         return userAnswers;
     }
-
-    /**
-     * Writes the corresponding object to the output socket
-     * @param obj The output object
-     * @throws IOException
-     */
-    private void writeObject(Object obj) throws IOException {
-        socketOut.writeObject(obj);
-        socketOut.reset();
-    }
-
 }
