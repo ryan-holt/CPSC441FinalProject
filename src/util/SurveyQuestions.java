@@ -9,7 +9,7 @@ import java.util.Arrays;
  * @since November 1st, 2019
  * @version 1.0
  */
-public class SurveyQuestions extends Message{
+public class SurveyQuestions extends Message {
 
     /**
      * THe ArrayList of all the survey questions

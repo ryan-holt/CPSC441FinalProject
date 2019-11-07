@@ -4,11 +4,7 @@ import util.Message;
 import util.MessageListener;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 /**
  * This class is responsible for communicating with the client.
@@ -19,7 +15,7 @@ public class ClientSocketHandler extends SocketHandler {
 
 	private boolean loopCommunication;
 
-	private Message msgOut;
+	private Message nextMsgOut;
 	private Message lastMsgIn;
 
 	public ClientSocketHandler(Socket socket, MessageListener listener) {
@@ -31,12 +27,12 @@ public class ClientSocketHandler extends SocketHandler {
 		this.loopCommunication = loopCommunication;
 	}
 
-	public Message getMsgOut() {
-		return msgOut;
+	public Message getNextMsgOut() {
+		return nextMsgOut;
 	}
 
-	public void setMsgOut(Message msgOut) {
-		this.msgOut = msgOut;
+	public void setNextMsgOut(Message nextMsgOut) {
+		this.nextMsgOut = nextMsgOut;
 	}
 
 	public Message getLastMsgIn() {
@@ -55,15 +51,14 @@ public class ClientSocketHandler extends SocketHandler {
 
 	private void writeAndReadMsg() {
 		try {
-			Message msgOut = getMsgOut();
-			System.out.println("!!! CLIENT writing " + msgOut.getAction()); // FIXME delete
+			Message msgOut = getNextMsgOut();
 			writeMessage(msgOut);
 			if (msgOut.getAction().equals("terminate")) {
 				stop();
 			}
 			Message msgIn = readMessage();
 			lastMsgIn = msgIn;
-			notifyListener(msgIn); // Let the listener handle the message but don't do anything with it
+			nextMsgOut = notifyListener(msgIn); // Let the listener handle the message but don't do anything with it
 
 		} catch (IOException e) {
 			System.err.println("Slave ServerSocketHandler error:");

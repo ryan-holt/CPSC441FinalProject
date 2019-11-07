@@ -21,6 +21,8 @@ public class FileHandler {
 
     public FileHandler() {
         filepath = System.getProperty("user.dir") + "\\SurveyEntries.txt";
+        System.out.println("!!! Printed file to: " + filepath);
+
     }
 
     /**

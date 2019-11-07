@@ -12,8 +12,17 @@ import java.net.UnknownHostException;
 
 abstract class SocketHandler implements Runnable {
 	protected Socket socket;
-	protected ObjectInputStream socketIn;
+
+	/**
+	 * The output socket used for sending messages to the socket
+	 */
 	protected ObjectOutputStream socketOut;
+
+	/**
+	 * The input socket used for receiving messages from the socket
+	 */
+	protected ObjectInputStream socketIn;
+
 
 	protected MessageListener listener;
 
@@ -59,7 +68,6 @@ abstract class SocketHandler implements Runnable {
 //			e.printStackTrace();
 //		}
 //	}
-
 	public void printIPInfo() {
 		InetAddress ip;
 		try {
@@ -71,11 +79,17 @@ abstract class SocketHandler implements Runnable {
 		}
 	}
 
-	public void stop() throws IOException {
-		shouldRun = false;
-		socket.close();
-		socketIn.close();
-		socketOut.close();
+	public void stop() {
+		try {
+			shouldRun = false;
+			socket.close();
+			socketIn.close();
+			socketOut.close();
+		} catch (IOException e) {
+			System.err.println("Error: Failed to stop SocketHandler");
+			e.printStackTrace();
+			System.exit(-1);
+		}
 	}
 
 	protected Message readMessage() throws IOException, ClassNotFoundException {

@@ -1,6 +1,5 @@
 package userClient;
 
-import com.sun.deploy.util.SessionState;
 import util.*;
 import util.sockethandler.ClientSocketHandler;
 
@@ -17,22 +16,7 @@ import java.util.Arrays;
  */
 public class ClientController implements MessageListener {
 
-    /**
-     * The output socket used for communication with master
-     */
-//    private ObjectOutputStream socketOut;
-
-    private Socket aSocket;
-
-    /**
-     * The input socket used for receiving messages from master
-     */
-//    private ObjectInputStream socketIn;
-
-    /**
-     * The name of the user
-     */
-    private String user;
+    private Socket socket;
 
     /**
      * BufferedReader to read in user input
@@ -49,11 +33,9 @@ public class ClientController implements MessageListener {
      */
     public ClientController(String serverName, int portNumber) {
         try {
-            aSocket = new Socket(serverName, portNumber);
+            socket = new Socket(serverName, portNumber);
 
-//            socketIn = new ObjectInputStream(aSocket.getInputStream());
-//            socketOut = new ObjectOutputStream(aSocket.getOutputStream());
-	        clientSocketHandler = new ClientSocketHandler(aSocket, this, false); // TODO Set this looping flag true
+	        clientSocketHandler = new ClientSocketHandler(socket, this, true);
             inFromUser = new BufferedReader(new InputStreamReader(System.in));
         } catch (IOException e) {
             e.printStackTrace();
@@ -73,15 +55,25 @@ public class ClientController implements MessageListener {
     }
 
 	public Message handleMessage(Message msg) {
-		System.out.println("!!! master has replied with: " + msg.getAction());
-
+    	Message msgOut = new Message("quit");
     	switch(msg.getAction()) {
 
 		    case "sendSurveyQuestions":
+				msgOut = getSurveyAnswer((SurveyQuestions) msg);
 		    	break;
+		    case "finishedSurvey":
+		    	msgOut = finishSurvey();
+		    	break;
+		    case "terminate":
+		    	clientSocketHandler.stop(); // Server finally said to stop
+			    break;
+		    default:
+		    	msgOut.setAction("terminate");
+			    System.err.println("Error: ClientController does not recognize message with action " + msg.getAction() + ", terminating");
+			    break;
 	    }
 
-	    return new Message("quit"); // FIXME replace
+	    return msgOut;
 	}
 
     /**
@@ -90,45 +82,54 @@ public class ClientController implements MessageListener {
      * @throws ClassNotFoundException
      */
     public void communicateWithServer() throws IOException, ClassNotFoundException {
-        // TODO Replace with ClientSocketHandler code and delete
-//        Message msg = (Message)(socketIn.readObject());
-//        System.out.println(msg.getAction());
-//        msg.setAction(inFromUser.readLine());
-//        user = msg.getAction();
-//        writeObject(msg);
-//        SurveyQuestions incomingSurvey = (SurveyQuestions) socketIn.readObject();
-//        ArrayList<SurveyEntry> userSurveyAnswers = getSurveyAnswer(incomingSurvey);
-//        SurveyAnswer userAnswer = new SurveyAnswer(userSurveyAnswers);
-//        writeObject(userAnswer);
-//        System.out.println("Survey has been completed. Have a great day!");
-
-		clientSocketHandler.setMsgOut(new Message("requestSurvey"));
+		clientSocketHandler.setNextMsgOut(new Message("requestSurvey"));
 		clientSocketHandler.communicate();
 	    System.out.println();
     }
     /**
      * Prompts the user a list of survey questions and gets the answers
      * @param incomingSurvey
-     * @return An ArrayList of all the answers to all the questions
+     * @return A SurveyAnswer object containing all the answers to all the questions
      * @throws IOException
      */
-    public ArrayList<SurveyEntry> getSurveyAnswer(SurveyQuestions incomingSurvey) throws IOException {
+    public SurveyAnswer getSurveyAnswer(SurveyQuestions incomingSurvey) {
+	    System.out.println("Please enter your name: ");
+	    String user = null;
+    	try {
+		    user = inFromUser.readLine();
+	    } catch (IOException e) {
+    		e.printStackTrace();
+	    }
+
         ArrayList<String> surveyQuestionList = incomingSurvey.getSurveyQuestionList();
         ArrayList<ArrayList<String>> surveyAnswersLists = incomingSurvey.getSurveyAnswersLists();
         ArrayList<SurveyEntry> userAnswers = new ArrayList<SurveyEntry>();
         for (int i = 0; i < surveyQuestionList.size(); i++) {
             boolean invalidResponse = true;
             while (invalidResponse) {
-                System.out.println(surveyQuestionList.get(i));
-                ArrayList<String> currentQuestionResponses = new ArrayList<String>(Arrays.asList(inFromUser.readLine().split("\\s+")));
-                if (!surveyAnswersLists.get(i).containsAll(currentQuestionResponses)) {
-                    System.out.println("Invalid response, please try again.");
-                    continue;
-                }
-                invalidResponse = false;
-                userAnswers.add(new SurveyEntry(user, i+1, currentQuestionResponses));
+            	try {
+		            System.out.println(surveyQuestionList.get(i));
+		            ArrayList<String> currentQuestionResponses = new ArrayList<String>(Arrays.asList(inFromUser.readLine().split("\\s+")));
+		            if (!surveyAnswersLists.get(i).containsAll(currentQuestionResponses)) {
+			            System.out.println("Invalid response, please try again.");
+			            continue;
+		            }
+		            invalidResponse = false;
+		            userAnswers.add(new SurveyEntry(user, i + 1, currentQuestionResponses));
+	            } catch (IOException e) {
+            		e.printStackTrace();
+	            }
             }
         }
-        return userAnswers;
+        return new SurveyAnswer(userAnswers);
+    }
+
+	/**
+	 * Sends a quit message and terminates connections
+	 * @return a message with a quit action
+	 */
+	private Message finishSurvey() {
+        System.out.println("Survey has been completed. Have a great day!");
+        return new Message("quit");
     }
 }

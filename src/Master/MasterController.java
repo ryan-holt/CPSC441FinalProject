@@ -86,9 +86,9 @@ public class MasterController implements MessageListener {
 		    case "requestSurvey":
 				msgOut = createSurveyQuestions();
 		    	break;
-		    case "saveSurveyAnswers":
+		    case "sendSurveyAnswers":
 		    	writeSurveyAnswerToFile((SurveyAnswer) msg);
-		    	msgOut.setAction("quit");
+		    	msgOut.setAction("finishedSurvey");
 		    	break;
 		    case "calculateCorrelation":
 			    //Insert code to calculate correlations
@@ -99,12 +99,11 @@ public class MasterController implements MessageListener {
 		    case "viewHistoricalCorrelation":
 			    //Insert code to do that
 			    break;
-		    // TODO Handle quit (client dies) vs terminate (server dies) commands
 		    case "quit":
 			    msgOut.setAction("terminate");
 		    	break;
-	        case "termiante":
-				msgOut.setAction("terminate");
+	        case "terminate":
+				msgOut.setAction("terminate"); // TODO Handle quit (client dies) vs terminate (server dies) commands
 			    break;
 		    case "test":
 		    	msgOut.setAction("masterControllerTestResponse");
