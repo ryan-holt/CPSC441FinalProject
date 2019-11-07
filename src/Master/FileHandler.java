@@ -20,10 +20,7 @@ public class FileHandler {
     String filepath;
 
     public FileHandler() {
-        filepath = System.getProperty("user.dir") + "\\SurveyEntries.txt";
-        System.out.println("!!! Printed file to: " + filepath);
-
-    }
+        filepath = System.getProperty("user.dir") + "\\SurveyEntries.txt"; }
 
     /**
      * Read the text-based database and writes to an arraylist
