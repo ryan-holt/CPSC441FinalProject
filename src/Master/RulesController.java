@@ -3,6 +3,7 @@ package Master;
 import util.AssociationRuleRequest;
 import util.AssociationRuleResponse;
 import util.Rule;
+import util.RuleCorrelationRequest;
 import util.sockethandler.ClientSocketHandler;
 
 import java.util.ArrayList;
@@ -60,8 +61,30 @@ public class RulesController {
 		return null;
 	}
 
-	public void createRuleCorrelationRequests() {
-		System.out.println("!!! inside createRuleCorrelationRequests"); // FIXME delete
+	/**
+	 * Returns an arraylist of rule correlation requests
+	 * @param ruleResponses the rule responses
+	 * @return the arraylist of rule correlation requests
+	 */
+	ArrayList<RuleCorrelationRequest> createRuleCorrelationRequests(Map<Integer, AssociationRuleResponse> ruleResponses) {
+		ArrayList<RuleCorrelationRequest> outputList = new ArrayList<RuleCorrelationRequest>();
+		for(int i = 1; i <= ruleResponses.size(); i++) {
+			for(int j=0; j < ruleResponses.get(i).getRules().size(); j++) {
+				if(i+1 <= ruleResponses.size()) {
+					ArrayList<Rule> ruleCorrelationArray = new ArrayList<>();
+					ruleCorrelationArray.add(ruleResponses.get(i).getRules().get(j));
+					outputList.add(new RuleCorrelationRequest("baseRule", ruleCorrelationArray));
+					for (int k = i + 1; k <= ruleResponses.size(); k++) {
+						ruleCorrelationArray = new ArrayList<>();
+						for (int l = 0; l < ruleResponses.get(k).getRules().size(); l++) {
+							ruleCorrelationArray.add(ruleResponses.get(k).getRules().get(l));
+						}
+						outputList.add(new RuleCorrelationRequest("rule", ruleCorrelationArray));
+					}
+				}
+			}
+		}
+		return outputList;
 	}
 
 	public void setRuleRequests(List<AssociationRuleRequest> ruleRequests) {

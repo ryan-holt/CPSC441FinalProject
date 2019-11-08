@@ -259,31 +259,32 @@ public class MasterController implements MessageListener {
 		return associationRulePackage;
 	}
 
+	// FIXME delete
 	/**
 	 * Returns an arraylist of rule correlation requests
 	 * @param ruleResponses the rule responses
 	 * @return the arraylist of rule correlation requests
 	 */
-	ArrayList<RuleCorrelationRequest> createRuleCorrelationRequests(Map<Integer, AssociationRuleResponse> ruleResponses) {
-		ArrayList<RuleCorrelationRequest> outputList = new ArrayList<RuleCorrelationRequest>();
-		for(int i = 1; i <= ruleResponses.size(); i++) {
-			for(int j=0; j < ruleResponses.get(i).getRules().size(); j++) {
-				if(i+1 <= ruleResponses.size()) {
-					ArrayList<Rule> ruleCorrelationArray = new ArrayList<>();
-					ruleCorrelationArray.add(ruleResponses.get(i).getRules().get(j));
-					outputList.add(new RuleCorrelationRequest("baseRule", ruleCorrelationArray));
-					for (int k = i + 1; k <= ruleResponses.size(); k++) {
-						ruleCorrelationArray = new ArrayList<>();
-						for (int l = 0; l < ruleResponses.get(k).getRules().size(); l++) {
-							ruleCorrelationArray.add(ruleResponses.get(k).getRules().get(l));
-						}
-						outputList.add(new RuleCorrelationRequest("rule", ruleCorrelationArray));
-					}
-				}
-			}
-		}
-		return outputList;
-	}
+//	ArrayList<RuleCorrelationRequest> createRuleCorrelationRequests(Map<Integer, AssociationRuleResponse> ruleResponses) {
+//		ArrayList<RuleCorrelationRequest> outputList = new ArrayList<RuleCorrelationRequest>();
+//		for(int i = 1; i <= ruleResponses.size(); i++) {
+//			for(int j=0; j < ruleResponses.get(i).getRules().size(); j++) {
+//				if(i+1 <= ruleResponses.size()) {
+//					ArrayList<Rule> ruleCorrelationArray = new ArrayList<>();
+//					ruleCorrelationArray.add(ruleResponses.get(i).getRules().get(j));
+//					outputList.add(new RuleCorrelationRequest("baseRule", ruleCorrelationArray));
+//					for (int k = i + 1; k <= ruleResponses.size(); k++) {
+//						ruleCorrelationArray = new ArrayList<>();
+//						for (int l = 0; l < ruleResponses.get(k).getRules().size(); l++) {
+//							ruleCorrelationArray.add(ruleResponses.get(k).getRules().get(l));
+//						}
+//						outputList.add(new RuleCorrelationRequest("rule", ruleCorrelationArray));
+//					}
+//				}
+//			}
+//		}
+//		return outputList;
+//	}
 
     // TODO Assign return type message
     private synchronized void calculateCorrelation() {
