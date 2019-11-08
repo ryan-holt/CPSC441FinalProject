@@ -192,6 +192,17 @@ public class MasterController implements MessageListener {
     }
 
 	/**
+	 * Prepares the association rule request package to send to slave
+	 * @throws IOException
+	 */
+	public ArrayList<AssociationRuleRequest> prepareAssociationRuleRequests() {
+		ArrayList<SurveyEntry> entries = fileHandler.ReadFromFile();
+		HashMap<Integer,ArrayList<SurveyEntry>> entriesByQuestion = orderEntriesByQuestion(entries);
+		HashMap<Integer,ArrayList<KeywordGroup>> keywordsByQuestion = getKeywordGroupsByQuestion();
+		return createAssociationRuleRequests(entriesByQuestion, keywordsByQuestion);
+	}
+
+	/**
 	 * Order the survey entries by question into a hashmap
 	 * @param entries the arraylist that holds the entry information
 	 * @return hashmap with all the ordered information
@@ -249,13 +260,6 @@ public class MasterController implements MessageListener {
 	}
 
 	/**
-	 * sends the association rule package to the slaves
-	 */
-	void sendRuleRequestsToSlaves() {
-		System.out.println("Sending rule requests to slaves.");
-	}
-
-	/**
 	 * Returns an arraylist of rule correlation requests
 	 * @param ruleResponses the rule responses
 	 * @return the arraylist of rule correlation requests
@@ -283,25 +287,7 @@ public class MasterController implements MessageListener {
 
     // TODO Assign return type message
     private synchronized void calculateCorrelation() {
-    	// TODO get the associationRulesRequests
-	    ArrayList<KeywordGroup> testKeywordGroup = new ArrayList<KeywordGroup>(Arrays.asList(
-			    new KeywordGroup("python", "java"),
-			    new KeywordGroup("c++", "python"),
-			    new KeywordGroup("java", "c++")
-	    ));
-
-	    ArrayList<SurveyEntry> testEntries = new ArrayList<SurveyEntry>(Arrays.asList(
-			    new SurveyEntry("Jim", 1, "python", "java", "c++"),
-			    new SurveyEntry("Bob", 1, "python", "java"),
-			    new SurveyEntry("Frank", 1, "python", "c++")
-	    ));
-
-	    AssociationRuleRequest testRequest = new AssociationRuleRequest(1, testKeywordGroup, testEntries);
-
-	    List<AssociationRuleRequest> requests = new ArrayList<>();
-	    // FIXME delete
-	    requests.add(testRequest);
-	    requests.add(new AssociationRuleRequest(2, testKeywordGroup, testEntries));
+	    List<AssociationRuleRequest> requests = prepareAssociationRuleRequests();
 
 	    if (latch.getCount() != threadCount) {
 		    System.err.println("Error, expected latch to have count " + threadCount + " but count was only" + latch.getCount());

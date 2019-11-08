@@ -36,19 +36,25 @@ public class FileHandler {
      * @return ArrayList responses
      * @throws IOException
      */
-    public ArrayList<SurveyEntry> ReadFromFile() throws IOException {
+    public ArrayList<SurveyEntry> ReadFromFile() {
         ArrayList<SurveyEntry> responses = new ArrayList<>();
-        BufferedReader reader = new BufferedReader(new FileReader(surveyEntriesFilePath));
-        String line;
-        while((line = reader.readLine()) != null) {
-            String[] lineSplit = line.split("\t");
-            String[] entrySplit = lineSplit[2].split(",");
-            ArrayList<String> entryList = new ArrayList<>(Arrays.asList(entrySplit));
-            SurveyEntry tempEntry = new SurveyEntry(lineSplit[1], Integer.parseInt(lineSplit[0]),entryList);
-            responses.add(tempEntry);
+        try (BufferedReader reader = new BufferedReader(new FileReader(surveyEntriesFilePath))) {
+
+	        String line;
+	        while ((line = reader.readLine()) != null) {
+		        String[] lineSplit = line.split("\t");
+		        String[] entrySplit = lineSplit[2].split(",");
+		        ArrayList<String> entryList = new ArrayList<>(Arrays.asList(entrySplit));
+		        SurveyEntry tempEntry = new SurveyEntry(lineSplit[1], Integer.parseInt(lineSplit[0]), entryList);
+		        responses.add(tempEntry);
+	        }
+	        reader.close();
+	        return responses;
+        } catch (IOException e) {
+        	e.printStackTrace();
         }
-        reader.close();
-        return responses;
+
+        return null;
     }
 
     /**
@@ -82,7 +88,6 @@ public class FileHandler {
 
     /**
      * writes the correlation scores to a file
-     * @param correlationScores ArrayList that holds all the correlation scores
      * @throws IOException
      */
     public String getListOfHistoricalCorrelation(){
