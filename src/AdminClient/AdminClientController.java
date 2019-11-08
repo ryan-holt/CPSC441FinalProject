@@ -77,6 +77,7 @@ public class AdminClientController implements MessageListener {
                 break;
             case "terminate":
                 clientSocketHandler.stop(); // Server finally said to stop
+                System.exit(-1);
                 break;
             default:
                 msgOut.setAction("terminate");
