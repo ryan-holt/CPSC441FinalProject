@@ -56,6 +56,7 @@ public class RulesController {
 	}
 
 	public ClientSocketHandler addRuleResponse(AssociationRuleResponse ruleResponse, Map<String, ClientSocketHandler> clientSocketHandlers) {
+		// TODO delete
 		addToSharedList(ruleResponses, ruleResponse);
 
 		// Check if any other messages need to be sent still
@@ -68,15 +69,36 @@ public class RulesController {
 		}
 
 		return null;
+
+//		return addResponse(ruleRequests, ruleResponses, ruleResponse, clientSocketHandlers);
+	}
+
+	public ClientSocketHandler addCorrelationResponse(RuleCorrelationResponse correlationResponse, Map<String, ClientSocketHandler> clientSocketHandlers) {
+		return addResponse(correlationRequests, correlationResponses, correlationResponse, clientSocketHandlers);
+	}
+
+	private <T extends Message, S extends HostAddressMessage>
+	ClientSocketHandler addResponse(List<T> requests, List<S> responses, S response, Map<String, ClientSocketHandler> clientSocketHandlers) {
+		addToSharedList(responses, response);
+
+		// Check if any other messages need to be sent still
+		if (sentMultithreadedMessagesCount < requests.size()) {
+			ClientSocketHandler clientSocketHandler = clientSocketHandlers.get(response.getHostIP());
+			clientSocketHandler.setNextMsgOut(requests.get(sentMultithreadedMessagesCount));
+			sentMultithreadedMessagesCount++;
+
+			return clientSocketHandler;
+		}
+
+		return null;
 	}
 
 	/**
 	 * Returns an arraylist of rule correlation requests
 	 *
-	 * @param ruleResponses the rule responses
 	 * @return the arraylist of rule correlation requests
 	 */
-	ArrayList<RuleCorrelationRequest> createRuleCorrelationRequests() {
+	void createRuleCorrelationRequests() {
 		ArrayList<RuleCorrelationRequest> outputList = new ArrayList<RuleCorrelationRequest>();
 
 		for (int i = 0; i < ruleResponses.size() - 1; i++) {
@@ -94,7 +116,7 @@ public class RulesController {
 			}
 		}
 
-		return outputList;
+		correlationRequests = outputList;
 	}
 
 	public void setRuleRequests(List<AssociationRuleRequest> ruleRequests) {
@@ -103,6 +125,10 @@ public class RulesController {
 
 	public void clearRuleResponses() {
 		clearSharedList(ruleResponses);
+	}
+
+	public void clearCorrelationResponses() {
+		clearSharedList(correlationResponses);
 	}
 
 	/**
@@ -127,6 +153,7 @@ public class RulesController {
 		sharedList.addAll(appendList);
 	}
 
+	// TODO Use this or delete it!
 	/**
 	 * Get the next entry from a shared list. Used for shared resources in multithreading
 	 */

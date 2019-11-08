@@ -48,8 +48,20 @@ public class SlaveController implements MessageListener {
 		Message msgOut = null;
 		switch (msg.getAction()) {
 			case "requestAssociationRules":
-				System.out.println("!!! slave starting requestAssociationRules"); // FIXME delete
+				System.out.print("!!! slave starting requestAssociationRules -- "); // FIXME delete
+				for (KeywordGroup kg : ((AssociationRuleRequest) msg).getKeywordGroups()) {
+					System.out.println(String.join(", ", kg.getKeywords()));
+				}
 				msgOut = rulesController.calculateAssociationRules((AssociationRuleRequest) msg);
+				break;
+			case "requestRuleCorrelation":
+				System.out.println("!!! slave starting requestRuleCorrelation"); // FIXME delete
+				// FIXME delete hardcoded entry
+				java.util.ArrayList<RulesCorrelation> testCorrelations = new java.util.ArrayList<>();
+				java.util.ArrayList<KeywordGroup> testKeywords = new java.util.ArrayList<>();
+				testKeywords.add(new KeywordGroup("lolJava", "lolPython"));
+				testCorrelations.add(new RulesCorrelation(testKeywords, 0.99));
+				msgOut = new RuleCorrelationResponse(testCorrelations);
 				break;
 			case "test": // FIXME delete
 				return new Message("slaveControllerTestResponse");

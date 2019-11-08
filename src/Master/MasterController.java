@@ -134,14 +134,17 @@ public class MasterController implements MessageListener {
 		    	msgOut.setAction("finishedSurvey");
 		    	break;
 		    case "calculateCorrelation":
-				//calculateCorrelation();
+				calculateCorrelation();
 				//TODO Uncomment when we get correlations from calculateCorrelations -- this function works already =)
 				//fileHandler.writeCorrelationsToFile(correlations);
 				//TODO DUMMY OUTPUT to be deleted and replaced
 				msgOut = getHistoricalCalculationResponse("test.txt");
 			    break;
 		    case "associationRulesResponse":
-//		    	addRuleResponseAndSendNext((AssociationRuleResponse) msg); // TODO consider deleting - handle with futures instead
+//		    	addRuleResponseAndSendNext((AssociationRuleResponse) msg); // TODO clean out and delete, bypass error message - handle with futures instead
+		    	break;
+		    case "ruleCorrelationResponse":
+		    	// TODO clean out and delete, bypass error message
 		    	break;
 		    case "listHistoricalCalculations":
 			    String HCList = fileHandler.getListOfHistoricalCorrelation();
@@ -266,33 +269,6 @@ public class MasterController implements MessageListener {
 		return associationRulePackage;
 	}
 
-	// FIXME delete
-	/**
-	 * Returns an arraylist of rule correlation requests
-	 * @param ruleResponses the rule responses
-	 * @return the arraylist of rule correlation requests
-	 */
-//	ArrayList<RuleCorrelationRequest> createRuleCorrelationRequests(Map<Integer, AssociationRuleResponse> ruleResponses) {
-//		ArrayList<RuleCorrelationRequest> outputList = new ArrayList<RuleCorrelationRequest>();
-//		for(int i = 1; i <= ruleResponses.size(); i++) {
-//			for(int j=0; j < ruleResponses.get(i).getRules().size(); j++) {
-//				if(i+1 <= ruleResponses.size()) {
-//					ArrayList<Rule> ruleCorrelationArray = new ArrayList<>();
-//					ruleCorrelationArray.add(ruleResponses.get(i).getRules().get(j));
-//					outputList.add(new RuleCorrelationRequest("baseRule", ruleCorrelationArray));
-//					for (int k = i + 1; k <= ruleResponses.size(); k++) {
-//						ruleCorrelationArray = new ArrayList<>();
-//						for (int l = 0; l < ruleResponses.get(k).getRules().size(); l++) {
-//							ruleCorrelationArray.add(ruleResponses.get(k).getRules().get(l));
-//						}
-//						outputList.add(new RuleCorrelationRequest("rule", ruleCorrelationArray));
-//					}
-//				}
-//			}
-//		}
-//		return outputList;
-//	}
-
     // TODO Assign return type message
     private synchronized void calculateCorrelation() {
 	    List<AssociationRuleRequest> requests = prepareAssociationRuleRequests();
@@ -302,26 +278,56 @@ public class MasterController implements MessageListener {
 		    System.exit(-1);
 	    }
 
+	    // Clean off old instances before starting anything.
+	    rulesController.clearRuleResponses();
+	    rulesController.clearCorrelationResponses();
+
 	    rulesController.setRuleRequests(requests);
 
+	    // Send first tasks to slaves
 		rulesController.batchStartRuleRequests(threadCount, clientSocketHandlers);
 
+		// Record slave tasks as futures
 	    for (ClientSocketHandler clientSocketHandler : clientSocketHandlers.values()) {
 	    	clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 	    }
 
-	    waitForSlaveExecution();
+	    // Wait for slaves and automatically kick off more rule requests until list is exhausted
+	    waitForSlaveRuleExecution();
 
+	    // Wait to truly exhaust list
 	    try {
 		    latch.await();
 	    } catch (InterruptedException e) {
 		    e.printStackTrace();
 	    }
 
+	    clientFutures.clear();
+	    // Custom reset function to make latch re-usable
+	    latch.reset();
+
+	    // Creates and populates the correlation requests
 	    rulesController.createRuleCorrelationRequests();
+
+	    rulesController.batchStartCorrelationRequests(threadCount, clientSocketHandlers);
+
+	    for (ClientSocketHandler clientSocketHandler : clientSocketHandlers.values()) {
+		    clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
+	    }
+
+	    waitForSlaveCorrelationExecution();
+
+	    // Wait to truly exhaust list
+	    try {
+		    latch.await();
+	    } catch (InterruptedException e) {
+		    e.printStackTrace();
+	    }
+
+	    System.out.println("!!! Done calculating correlations"); // FIXME delete
     }
 
-    private synchronized void waitForSlaveExecution() {
+    private synchronized void waitForSlaveRuleExecution() {
 	    boolean isWaiting = true;
 	    Iterator<Map.Entry<ClientSocketHandler, Future>> iterator;
 	    while (isWaiting) {
@@ -353,19 +359,69 @@ public class MasterController implements MessageListener {
 	    }
     }
 
-    private synchronized void addRuleResponseAndSendNext(ClientSocketHandler clientSocketHandler, AssociationRuleResponse response) {
+	private synchronized void waitForSlaveCorrelationExecution() {
+		boolean isWaiting = true;
+		Iterator<Map.Entry<ClientSocketHandler, Future>> iterator;
+		while (isWaiting) {
+			isWaiting = false;
+
+			iterator = clientFutures.entrySet().iterator();
+			while (iterator.hasNext()) {
+				Map.Entry<ClientSocketHandler, Future> entry = iterator.next();
+				ClientSocketHandler clientSocketHandler = entry.getKey();
+				Future future = entry.getValue();
+
+				try {
+					future.get(100, TimeUnit.MILLISECONDS);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				} catch (ExecutionException e) {
+					e.printStackTrace();
+				} catch (TimeoutException e) {
+					isWaiting = true;
+					continue; // Not ready yet, go back to waiting...
+				}
+
+				iterator.remove(); // Done with this entry, remove
+
+				// Recursive call
+				addCorrelationResponseAndSendNext(clientSocketHandler, (RuleCorrelationResponse) clientSocketHandler.getLastMsgIn());
+			}
+		}
+	}
+
+	private synchronized void addRuleResponseAndSendNext(ClientSocketHandler clientSocketHandler, AssociationRuleResponse response) {
 		clientSocketHandler = rulesController.addRuleResponse(response, clientSocketHandlers);
+
+		// If any other messages need to be sent...
+		if (clientSocketHandler != null) {
+			System.out.println("!!! clientSocketHandler at " + clientSocketHandler.getServerIp()); // FIXME delete
+			clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
+
+			waitForSlaveRuleExecution();
+		} else {
+			latchCountDown();
+		}
+	}
+
+	// TODO Merge with addRuleResponseAndSendNext
+    private synchronized void addCorrelationResponseAndSendNext(ClientSocketHandler clientSocketHandler, RuleCorrelationResponse response) {
+		clientSocketHandler = rulesController.addCorrelationResponse(response, clientSocketHandlers);
 
     	// If any other messages need to be sent...
     	if (clientSocketHandler != null) {
-		    System.out.println("!!! clientSocketHandler at " + clientSocketHandler.getServerIp());
+		    System.out.println("!!! clientSocketHandler at " + clientSocketHandler.getServerIp()); // FIXME delete
 		    clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 
-		    waitForSlaveExecution();
+		    waitForSlaveCorrelationExecution();
 	    } else {
     		latchCountDown();
 	    }
     }
+
+
+
+
 
     public static void main(String[] args) {
         MasterController myServer = new MasterController();
