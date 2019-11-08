@@ -324,7 +324,7 @@ public class MasterController implements MessageListener {
 		    e.printStackTrace();
 	    }
 
-	    List<RuleCorrelationResponse> correlationResponses = rulesController.getCorrelationResponses();
+	    List<RulesCorrelation> topCorrelations = rulesController.getTopCorrelations();
 	    System.out.println("!!! Done calculating correlations"); // FIXME delete
     }
 

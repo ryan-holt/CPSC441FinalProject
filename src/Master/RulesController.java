@@ -6,6 +6,7 @@ import util.sockethandler.ClientSocketHandler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * This is a controller for the MASTER relating to rules
@@ -123,8 +124,18 @@ public class RulesController {
 		this.ruleRequests = ruleRequests;
 	}
 
-	public List<RuleCorrelationResponse> getCorrelationResponses() {
-		return correlationResponses;
+	public List<RulesCorrelation> getTopCorrelations() {
+		int maxEntries = 10;
+
+		// Get all the correlations out of their individual responses and into a single list
+		List<RulesCorrelation> correlations = new ArrayList<>(correlationResponses.size() * maxEntries);
+		correlationResponses.stream().forEach(r -> correlations.addAll(r.getCorrelations()));
+
+		// Cut down on the list to the top 10 only
+		return correlations.stream()
+				.sorted((a, b) -> (int) (a.getScore() - b.getScore()))
+				.limit(maxEntries)
+				.collect(Collectors.toList());
 	}
 
 	public void clearRuleResponses() {
