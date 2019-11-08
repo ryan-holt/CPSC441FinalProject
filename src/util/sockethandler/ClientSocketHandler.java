@@ -71,8 +71,9 @@ public class ClientSocketHandler extends SocketHandler {
 			nextMsgOut = notifyListener(msgIn); // Let the listener handle the message but don't do anything with it
 
 		} catch (IOException e) {
-			System.err.println("Slave ServerSocketHandler error:");
-			e.printStackTrace();
+			System.err.println("Client ServerSocketHandler error. Did connection reset?");
+//			e.printStackTrace();
+			System.exit(-1);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
