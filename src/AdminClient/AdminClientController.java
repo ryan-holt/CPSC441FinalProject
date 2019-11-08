@@ -118,6 +118,7 @@ public class AdminClientController implements MessageListener {
                         invalidResponse = true;
                         break;
                     case "quit": case "4":
+                        msgOut.setAction("quit");
                         break;
                     default:
                         System.err.println("Invalid Input");
