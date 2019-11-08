@@ -221,7 +221,6 @@ public class MasterController implements MessageListener {
 			}
 			orderedEntries.get(entries.get(i).getQuestion()).add(entries.get(i));
 		}
-		System.out.println("HashMap orderedEntriesByQuestion: " + orderedEntries.keySet());
 		return orderedEntries;
 	}
 
@@ -261,7 +260,6 @@ public class MasterController implements MessageListener {
 		for(int i = 0; i < 4; i++) {
 			associationRulePackage.add(new AssociationRuleRequest(i+1,keywordsByQuestion.get(i+1), entriesByQuestion.get(i+1)));
 		}
-		System.out.println("ArrayList associationRulePackage: " + associationRulePackage);
 		return associationRulePackage;
 	}
 
@@ -269,8 +267,12 @@ public class MasterController implements MessageListener {
     private synchronized CalculationResponse calculateCorrelation() {
 	    List<AssociationRuleRequest> requests = prepareAssociationRuleRequests();
 
+	    clientFutures.clear();
+	    // Custom reset function to make latch re-usable
+	    latch.reset();
+
 	    if (latch.getCount() != threadCount) {
-		    System.err.println("Error, expected latch to have count " + threadCount + " but count was only" + latch.getCount());
+		    System.err.println("Error, expected latch to have count " + threadCount + " but count was only " + latch.getCount());
 		    System.exit(-1);
 	    }
 
@@ -394,7 +396,6 @@ public class MasterController implements MessageListener {
 
 		// If any other messages need to be sent...
 		if (clientSocketHandler != null) {
-			System.out.println("!!! clientSocketHandler at " + clientSocketHandler.getServerIp()); // FIXME delete
 			clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 
 			waitForSlaveRuleExecution();
@@ -409,7 +410,6 @@ public class MasterController implements MessageListener {
 
     	// If any other messages need to be sent...
     	if (clientSocketHandler != null) {
-		    System.out.println("!!! clientSocketHandler at " + clientSocketHandler.getServerIp()); // FIXME delete
 		    clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 
 		    waitForSlaveCorrelationExecution();

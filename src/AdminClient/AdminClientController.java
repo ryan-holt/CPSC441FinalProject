@@ -97,24 +97,26 @@ public class AdminClientController implements MessageListener {
         boolean invalidResponse = true;
         Message msgOut = new Message("quit");
         while (invalidResponse) {
+	        System.out.println("\nPlease enter a command:");
+
             try {
                 invalidResponse = false;
-                switch (inFromUser.readLine()) {
-                    case "calculate":
+                switch (inFromUser.readLine().toLowerCase()) {
+                    case "calculate": case "1":
                         msgOut = new Message("calculateCorrelation");
                         break;
-                    case "list":
+                    case "list": case "2":
                         msgOut = new Message("listHistoricalCalculations");
                         break;
-                    case "get":
+                    case "get": case "3":
                         System.out.println("Please enter the filename of a previous calculation:");
                         msgOut = new ViewHistoricalCalculationRequest(inFromUser.readLine());
                         break;
-                    case "help":
+                    case "help": case "0":
                         displayAllCommands();
                         invalidResponse = true;
                         break;
-                    case "quit":
+                    case "quit": case "4":
                         break;
                     default:
                         System.err.println("Invalid Input");

@@ -48,18 +48,13 @@ public class SlaveController implements MessageListener {
 		Message msgOut = null;
 		switch (msg.getAction()) {
 			case "requestAssociationRules":
-				// FIXME delete
-				System.out.println("!!! slave starting requestAssociationRules -- " + String.join(", ", ((AssociationRuleRequest) msg).getKeywordGroups().get(0).getKeywords()));
 				msgOut = rulesController.calculateAssociationRules((AssociationRuleRequest) msg);
 				break;
 			case "requestRuleCorrelation":
-				System.out.println("!!! slave starting requestRuleCorrelation"); // FIXME delete
 				msgOut = rulesController.calculateRulesCorrelationResponse((RuleCorrelationRequest) msg);
 				break;
 			case "test": // FIXME delete
 				return new Message("slaveControllerTestResponse");
-			case "test2":
-				return new Message("slaveControllerTestResponse2");
 			default:
 				msgOut = new Message("terminate");
 				System.err.println("Error: Message with action " + msg.getAction() + " is not recognized");
