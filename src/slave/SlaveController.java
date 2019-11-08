@@ -47,10 +47,10 @@ public class SlaveController implements MessageListener {
 	}
 	
 	public Message handleMessage(Message msg) {
-		Message msgOut;
+		Message msgOut = null;
 		switch (msg.getAction()) {
 			case "requestAssociationRules":
-				rulesController.calculateAssociationRules((AssociationRuleRequest) msg);
+				msgOut = rulesController.calculateAssociationRules((AssociationRuleRequest) msg);
 				break;
 			case "test": // FIXME delete
 				return new Message("slaveControllerTestResponse");

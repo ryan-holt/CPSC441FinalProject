@@ -1,9 +1,6 @@
 package slave;
 
-import util.AssociationRuleRequest;
-import util.KeywordGroup;
-import util.Rule;
-import util.SurveyEntry;
+import util.*;
 
 import java.security.acl.Group;
 import java.util.*;
@@ -14,7 +11,7 @@ public class RulesController {
 	 * Calculate the support and confidence of each keyword group for each survey entry
 	 * @param request
 	 */
-	public Map<KeywordGroup, Rule> calculateAssociationRules(AssociationRuleRequest request) {
+	public AssociationRuleResponse calculateAssociationRules(AssociationRuleRequest request) {
 		// Sort the groups by keyword
 		List<KeywordGroup> groups = sortKeywordsInGroup(request.getKeywordGroups());
 		List<SurveyEntry> entries = request.getSurveyEntries();
@@ -33,9 +30,9 @@ public class RulesController {
 
 		countKeywordEntries(groups, entries, keywordCounts, groupUsers);
 
-		LinkedHashMap<KeywordGroup, Rule> rules = calculateRulesScores((double) entries.size(), groups, keywordCounts, groupUsers);
+		List<Rule> rules = calculateRulesScores((double) entries.size(), groups, keywordCounts, groupUsers);
 
-		return rules;
+		return new AssociationRuleResponse(request.getQuestion(), rules);
 	}
 
 	private List<KeywordGroup> sortKeywordsInGroup(List<KeywordGroup> groups) {
@@ -75,12 +72,11 @@ public class RulesController {
 	 * @param groupUsers
 	 * @return
 	 */
-	private LinkedHashMap<KeywordGroup, Rule> calculateRulesScores(double entriesCount, List<KeywordGroup> groups,
+	private List<Rule> calculateRulesScores(double entriesCount, List<KeywordGroup> groups,
 	                                                       Map<String, Integer> keywordCounts, Map<KeywordGroup, GroupUsersData> groupUsers) {
-//		LinkedHashMap<KeywordGroup, Double> scores = new LinkedHashMap<>();
-		LinkedHashMap<KeywordGroup, Rule> rules = new LinkedHashMap<>();
+		List<Rule> rules = new LinkedList<>();
 		int maxEntries = 10;
-		KeywordGroup lowestScoreGroup = null;
+		Rule lowestScoreRule = null;
 		double lowestScore = 99999; // Impossibly high score, highest score = 1
 
 		for (KeywordGroup group : groups) {
@@ -101,37 +97,29 @@ public class RulesController {
 				KeywordGroup orderedGroup = getOrderedKeywordGroup(group, keyword);
 				Rule rule = new Rule(orderedGroup, score, users);
 				if (rules.size() < maxEntries) {
-					rules.put(orderedGroup, rule);
+					rules.add(rule);
 					if (score < lowestScore) {
 						lowestScore = score;
-						lowestScoreGroup = orderedGroup;
+						lowestScoreRule = rule;
 					}
 
 				} else if (score > lowestScore){
-					rules.put(orderedGroup, rule);
+					rules.add(rule);
 					// Evict the lowest score group
-					rules.remove(lowestScoreGroup);
+					rules.remove(lowestScoreRule);
 					// Find the new lowest score group
-					for (Map.Entry<KeywordGroup, Rule> entry : rules.entrySet()) {
-						if (lowestScore > entry.getValue().getScore()) {
-							lowestScoreGroup = entry.getKey();
-							lowestScore = entry.getValue().getScore();
+					for (Rule iteratedRule : rules) {
+						if (lowestScore > iteratedRule.getScore()) {
+							lowestScoreRule = iteratedRule;
+							lowestScore = iteratedRule.getScore();
 						}
 					}
 				}
 			}
 		}
 		
-		rules.forEach((k, v) -> v.sortUsers()); // Sort the users
-
-		// Sort the map
-		List<Map.Entry<KeywordGroup, Rule>> rulesArr = new ArrayList<>(rules.entrySet());
-		rules.clear();
-		rulesArr.stream()
-				.sorted((a, b) -> (int) (a.getValue().getScore() - b.getValue().getScore())) // Reverse sort
-//				.forEachOrdered(e -> rules.put(e.getKey(), e.getValue())); // Store values back into rules
-				.collect(Collectors.toList()); // Store values back into rules
-
+		rules.forEach(r -> r.sortUsers()); // Sort the users
+		Collections.sort(rules, (a, b) -> (int)(a.getScore() - b.getScore()));
 		return rules;
 	}
 

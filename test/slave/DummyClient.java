@@ -44,18 +44,22 @@ public class DummyClient {
 	 * @throws ClassNotFoundException
 	 */
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
-		DummyClient client = new DummyClient("localhost", 9000);
+		DummyClient client = new DummyClient("localhost", 9001);
 		client.communicateWithServer();
 	}
 
 	public void communicateWithServer() throws IOException, ClassNotFoundException {
-		Message msgOut = new Message("test");
-		System.out.println("DummyClient: sending message test");
+//		Message msgOut = new Message("test");
+		Message msgOut = SlaveControllerTest.makeTestAssociationRuleRequest();
+		System.out.println("DummyClient: sending message requestAssociationRules");
+
 
 		writeObject(msgOut);
 		System.out.println("DummyClient: waiting for response...");
 		Message msgIn = (Message) socketIn.readObject();
 		System.out.println("DummyClient: msgIn action is: " + msgIn.getAction());
+
+		
 		msgOut.setAction("quit");
 		writeObject(msgOut);
 		msgIn = (Message) socketIn.readObject();
