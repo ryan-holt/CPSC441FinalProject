@@ -9,13 +9,11 @@ import util.Rule;
 import java.util.List;
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-class RulesControllerTest {
+class SlaveRulesControllerTest {
 
 	@Test
 	void calculateAssociationRules() {
-		RulesController rulesController = new RulesController();
+		SlaveRulesController rulesController = new SlaveRulesController();
 		AssociationRuleRequest request = SlaveControllerTest.makeTestAssociationRuleRequest();
 
 		AssociationRuleResponse msgOut = rulesController.calculateAssociationRules(request);

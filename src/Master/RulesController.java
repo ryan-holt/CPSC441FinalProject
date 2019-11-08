@@ -56,21 +56,21 @@ public class RulesController {
 	}
 
 	public ClientSocketHandler addRuleResponse(AssociationRuleResponse ruleResponse, Map<String, ClientSocketHandler> clientSocketHandlers) {
-		// TODO delete
-		addToSharedList(ruleResponses, ruleResponse);
+//		// TODO delete
+//		addToSharedList(ruleResponses, ruleResponse);
+//
+//		// Check if any other messages need to be sent still
+//		if (sentMultithreadedMessagesCount < ruleRequests.size()) {
+//			ClientSocketHandler clientSocketHandler = clientSocketHandlers.get(ruleResponse.getHostIP());
+//			clientSocketHandler.setNextMsgOut(ruleRequests.get(sentMultithreadedMessagesCount));
+//			sentMultithreadedMessagesCount++;
+//
+//			return clientSocketHandler;
+//		}
+//
+//		return null;
 
-		// Check if any other messages need to be sent still
-		if (sentMultithreadedMessagesCount < ruleRequests.size()) {
-			ClientSocketHandler clientSocketHandler = clientSocketHandlers.get(ruleResponse.getHostIP());
-			clientSocketHandler.setNextMsgOut(ruleRequests.get(sentMultithreadedMessagesCount));
-			sentMultithreadedMessagesCount++;
-
-			return clientSocketHandler;
-		}
-
-		return null;
-
-//		return addResponse(ruleRequests, ruleResponses, ruleResponse, clientSocketHandlers);
+		return addResponse(ruleRequests, ruleResponses, ruleResponse, clientSocketHandlers);
 	}
 
 	public ClientSocketHandler addCorrelationResponse(RuleCorrelationResponse correlationResponse, Map<String, ClientSocketHandler> clientSocketHandlers) {
@@ -121,6 +121,10 @@ public class RulesController {
 
 	public void setRuleRequests(List<AssociationRuleRequest> ruleRequests) {
 		this.ruleRequests = ruleRequests;
+	}
+
+	public List<RuleCorrelationResponse> getCorrelationResponses() {
+		return correlationResponses;
 	}
 
 	public void clearRuleResponses() {

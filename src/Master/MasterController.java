@@ -324,6 +324,7 @@ public class MasterController implements MessageListener {
 		    e.printStackTrace();
 	    }
 
+	    List<RuleCorrelationResponse> correlationResponses = rulesController.getCorrelationResponses();
 	    System.out.println("!!! Done calculating correlations"); // FIXME delete
     }
 
@@ -418,10 +419,6 @@ public class MasterController implements MessageListener {
     		latchCountDown();
 	    }
     }
-
-
-
-
 
     public static void main(String[] args) {
         MasterController myServer = new MasterController();

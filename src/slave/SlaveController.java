@@ -9,14 +9,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class SlaveController implements MessageListener {
-	RulesController rulesController;
+	SlaveRulesController rulesController;
 
 	private ServerSocket serverSocket;
 	private ExecutorService pool; // TODO Delete multithreading, not needed
 	private int PORT = 9001;
 
 	public SlaveController() {
-		rulesController = new RulesController();
+		rulesController = new SlaveRulesController();
 
 		try {
 			serverSocket = new ServerSocket(PORT);
@@ -48,20 +48,13 @@ public class SlaveController implements MessageListener {
 		Message msgOut = null;
 		switch (msg.getAction()) {
 			case "requestAssociationRules":
-				System.out.print("!!! slave starting requestAssociationRules -- "); // FIXME delete
-				for (KeywordGroup kg : ((AssociationRuleRequest) msg).getKeywordGroups()) {
-					System.out.println(String.join(", ", kg.getKeywords()));
-				}
+				// FIXME delete
+				System.out.println("!!! slave starting requestAssociationRules -- " + String.join(", ", ((AssociationRuleRequest) msg).getKeywordGroups().get(0).getKeywords()));
 				msgOut = rulesController.calculateAssociationRules((AssociationRuleRequest) msg);
 				break;
 			case "requestRuleCorrelation":
 				System.out.println("!!! slave starting requestRuleCorrelation"); // FIXME delete
-				// FIXME delete hardcoded entry
-				java.util.ArrayList<RulesCorrelation> testCorrelations = new java.util.ArrayList<>();
-				java.util.ArrayList<KeywordGroup> testKeywords = new java.util.ArrayList<>();
-				testKeywords.add(new KeywordGroup("lolJava", "lolPython"));
-				testCorrelations.add(new RulesCorrelation(testKeywords, 0.99));
-				msgOut = new RuleCorrelationResponse(testCorrelations);
+				msgOut = rulesController.calculateRulesCorrelationResponse((RuleCorrelationRequest) msg);
 				break;
 			case "test": // FIXME delete
 				return new Message("slaveControllerTestResponse");

@@ -35,4 +35,8 @@ public class RulesCorrelation implements Serializable {
         s.append(": ").append(score);
         return s.toString();
     }
+
+    public double getScore() {
+        return score;
+    }
 }

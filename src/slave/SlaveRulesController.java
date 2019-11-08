@@ -6,7 +6,7 @@ import java.security.acl.Group;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class RulesController {
+public class SlaveRulesController {
 	/**
 	 * Calculate the support and confidence of each keyword group for each survey entry
 	 * @param request
@@ -85,10 +85,18 @@ public class RulesController {
 			double groupCount = (double) data.size();
 			List<String> users = data.users; // Get the users
 
+			if (entriesCount <= 0) {
+				continue; // Omit zero-sized entries
+			}
+
 			double supportScore = groupCount / entriesCount;
 
 			for (String keyword : keywords) {
 				double keywordCount = (double) keywordCounts.get(keyword);
+
+				if (entriesCount <= 0) {
+					continue; // Omit zero-sized entries
+				}
 
 				// Get the confidence score
 				double confidenceScore = groupCount / keywordCount;
@@ -139,5 +147,62 @@ public class RulesController {
 	private double calculateAssociationScore(double supportScore, double confidenceScore) {
 		double supportWeight = 0.3, confidenceWeight = 0.7;
 		return supportWeight * supportScore + confidenceWeight * confidenceScore;
+	}
+
+	public RuleCorrelationResponse calculateRulesCorrelationResponse(RuleCorrelationRequest correlationRequest) {
+		List<RulesCorrelation> correlations = new ArrayList<RulesCorrelation>();
+
+		Rule baseRule = correlationRequest.getBaseRule();
+		List<String> baseUsers = baseRule.getUsers();
+		for (Rule rule : correlationRequest.getRules()) {
+			// Find the users that are common between baseRule and this particular iterated rule
+			// Note: The users are sorted already, so you can do this algorithm with just 1 loop
+			List<String> users = rule.getUsers();
+
+			int i = 0, j = 0;
+			int intersectCount = 0;
+			int unionCount = 0;
+			while (i < baseUsers.size() && j < users.size()) {
+				int comparison = baseUsers.get(i).compareToIgnoreCase(users.get(j));
+				if (comparison == 0) {
+					intersectCount++;
+					unionCount++;
+					i++;
+					j++;
+				} else if (comparison > 0) {
+					unionCount++;
+					i++;
+				} else {
+					unionCount++;
+					j++;
+				}
+			}
+
+			if (unionCount == 0 || intersectCount == 0) {
+				continue;
+			}
+
+			double score = (double) intersectCount / (double) unionCount;
+
+			// Add the keywordGroups from baseRule.getKeywordGroup() and rule.getKeywordGroup() into an array
+
+			ArrayList<KeywordGroup> combinedKeywordGroups = new ArrayList<>();
+			combinedKeywordGroups.add(baseRule.getKeywordGroup());
+			combinedKeywordGroups.add(rule.getKeywordGroup());
+
+			correlations.add(new RulesCorrelation(combinedKeywordGroups, score));
+		}
+
+		correlations = filterTopCorrelations(correlations);
+		return new RuleCorrelationResponse(correlations);
+	}
+
+	private List<RulesCorrelation> filterTopCorrelations(List<RulesCorrelation> correlations) {
+		int maxCorrelations = 10;
+		return correlations.stream()
+				.filter(c -> c.getScore() >  0)
+				.sorted((a, b) -> (int)(a.getScore() - b.getScore()))
+				.limit(maxCorrelations)
+				.collect(Collectors.toList());
 	}
 }
