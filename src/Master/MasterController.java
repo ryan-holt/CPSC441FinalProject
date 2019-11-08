@@ -9,8 +9,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -26,15 +25,16 @@ public class MasterController implements MessageListener {
      * The socket port used for communication
      */
     private static final int SERVER_PORT = 9000;
-    private static final String[] CLIENT_IPS = {"localhost"};
-    private static final int[] CLIENT_PORTS = {9001};
+    private int threadCount;
+    private final String[] CLIENT_IPS = {"127.0.0.1"};
+    private final int[] CLIENT_PORTS = {9001};
+
+    private RulesController rulesController;
 
     /**
      * Server socket used for socket communication between the master and the client
      */
     private ServerSocket serverSocket;
-
-    private List<Socket> clientSockets;
 
     /**
      * Pool of threads used for multithreading
@@ -43,15 +43,17 @@ public class MasterController implements MessageListener {
     private ResettableCountDownLatch latch;
 
     private ServerSocketHandler serverSocketHandler;
-    private List<ClientSocketHandler> clientSocketHandlers;
+    private LinkedHashMap<String, ClientSocketHandler> clientSocketHandlers;
+
+
 
     public MasterController() {
         try {
-			initializeClientSockets();
+			initializeClientSocketHandlers();
 
             serverSocket = new ServerSocket(SERVER_PORT);
-            int threadCount = CLIENT_IPS.length;
-            pool = Executors.newFixedThreadPool(threadCount);
+            threadCount = CLIENT_IPS.length;
+            pool = Executors.newFixedThreadPool(5);
             latch = new ResettableCountDownLatch(threadCount);
             System.out.println("Server is running");
             printIPInfo();
@@ -61,19 +63,19 @@ public class MasterController implements MessageListener {
             e.printStackTrace();
         }
 
+        rulesController = new RulesController(this);
     }
 
 	/**
 	 * Create new client sockets to connect to slave computers in the cluster
 	 * @throws IOException
 	 */
-	private void initializeClientSockets() throws IOException {
-	    clientSockets = new ArrayList<>();
-
+	private void initializeClientSocketHandlers() throws IOException {
+		clientSocketHandlers = new LinkedHashMap<>();
 	    for (int i = 0; i < CLIENT_IPS.length; i++) {
 	    	String clientIP = CLIENT_IPS[i];
 	    	int clientPort = CLIENT_PORTS[i];
-	    	clientSockets.add(new Socket(clientIP, clientPort));
+		    clientSocketHandlers.put(clientIP, new ClientSocketHandler(new Socket(clientIP, clientPort), this));
 	    }
     }
 
@@ -109,6 +111,10 @@ public class MasterController implements MessageListener {
         }
     }
 
+    private void latchCountDown() {
+    	latch.countDown();
+    }
+
     public Message handleMessage(Message msg) {
     	Message msgOut = new Message("");
 	    switch (msg.getAction()) {
@@ -120,13 +126,16 @@ public class MasterController implements MessageListener {
 		    	msgOut.setAction("finishedSurvey");
 		    	break;
 		    case "calculateCorrelation":
-			    //Insert code to calculate correlations
+			    calculateCorrelation();
 			    break;
+		    case "associationRulesResponse":
+		    	addRuleResponseAndSendNext((AssociationRuleResponse) msg);
+		    	break;
 		    case "listHistoricalCorrelation":
-			    //Insert code to do that
+			    // TODO finish
 			    break;
 		    case "viewHistoricalCorrelation":
-			    //Insert code to do that
+			    // TODO finish
 			    break;
 		    case "quit":
 			    msgOut.setAction("terminate");
@@ -160,21 +169,63 @@ public class MasterController implements MessageListener {
 	    }
     }
 
-	/**
-	 * Append the appendList onto the sharedList. Used for shared resources in multithreading
-	 * @param sharedList
-	 * @param appendList
-	 * @param <T>
-	 */
-	private synchronized <T> void addToSharedList(List<T> sharedList, List<T> appendList) {
-    	sharedList.addAll(appendList);
+    // TODO Assign return type message
+    private synchronized void calculateCorrelation() {
+    	// TODO get the associationRulesRequests
+	    ArrayList<KeywordGroup> testKeywordGroup = new ArrayList<KeywordGroup>(Arrays.asList(
+			    new KeywordGroup("python", "java"),
+			    new KeywordGroup("c++", "python"),
+			    new KeywordGroup("java", "c++")
+	    ));
+
+	    ArrayList<SurveyEntry> testEntries = new ArrayList<SurveyEntry>(Arrays.asList(
+			    new SurveyEntry("Jim", 1, "python", "java", "c++"),
+			    new SurveyEntry("Bob", 1, "python", "java"),
+			    new SurveyEntry("Frank", 1, "python", "c++")
+	    ));
+
+	    AssociationRuleRequest testRequest = new AssociationRuleRequest(1, testKeywordGroup, testEntries);
+
+	    List<AssociationRuleRequest> requests = new ArrayList<>();
+	    requests.add(testRequest); // FIXME delete
+//	    requests.add(new AssociationRuleRequest(2, testKeywordGroup, testEntries)); // TODO Fix multithreading issues
+
+	    if (latch.getCount() != threadCount) {
+		    System.err.println("Error, expected latch to have count " + threadCount + " but count was only" + latch.getCount());
+		    System.exit(-1);
+	    }
+	    System.out.println("!!! latch is at: " + latch.getCount()); // FIXME delete
+
+	    rulesController.setRuleRequests(requests);
+
+		rulesController.batchStartRuleRequests(threadCount, clientSocketHandlers);
+
+	    for (ClientSocketHandler clientSocketHandler : clientSocketHandlers.values()) {
+	    	pool.execute(clientSocketHandler);
+	    }
+
+	    try {
+		    latch.await();
+	    } catch (InterruptedException e) {
+		    e.printStackTrace();
+	    }
+
+
+	    System.out.println("!!! latch is no longer waiting!"); // FIXME delete
+	    rulesController.createRuleCorrelationRequests();
     }
 
-	/**
-	 * Get the next entry from a shared list. Used for shared resources in multithreading
-	 */
-	private synchronized <T> T popSharedElement(List<T> sharedList) {
-		return sharedList.remove(0);
+    private synchronized void addRuleResponseAndSendNext(AssociationRuleResponse response) {
+    	ClientSocketHandler nextSocketHandler = rulesController.addRuleResponse(response, clientSocketHandlers);
+
+    	// If any other messages need to be sent...
+    	if (nextSocketHandler != null) {
+		    System.out.println("!!! clientSocketHandler at " + nextSocketHandler.getServerIp());
+		    pool.execute(nextSocketHandler);
+	    } else {
+    		latchCountDown();
+		    System.out.println("!!! latch decremented to " + latch.getCount()); // FIXME delete
+	    }
     }
 
     public static void main(String[] args) {

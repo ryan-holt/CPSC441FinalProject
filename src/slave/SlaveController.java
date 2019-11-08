@@ -50,6 +50,7 @@ public class SlaveController implements MessageListener {
 		Message msgOut = null;
 		switch (msg.getAction()) {
 			case "requestAssociationRules":
+				System.out.println("!!! slave starting requestAssociationRules"); // FIXME delete
 				msgOut = rulesController.calculateAssociationRules((AssociationRuleRequest) msg);
 				break;
 			case "test": // FIXME delete

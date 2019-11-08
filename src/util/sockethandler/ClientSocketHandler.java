@@ -30,6 +30,10 @@ public class ClientSocketHandler extends SocketHandler {
 		serverIp = socket.getInetAddress().getHostAddress();
 	}
 
+	public String getServerIp() {
+		return serverIp;
+	}
+
 	public Message getNextMsgOut() {
 		return nextMsgOut;
 	}
