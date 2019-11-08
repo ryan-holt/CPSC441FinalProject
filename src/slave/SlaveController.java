@@ -1,7 +1,7 @@
 package slave;
 
-import com.sun.security.ntlm.Server;
 import util.*;
+import util.sockethandler.ServerSocketHandler;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -33,13 +33,13 @@ public class SlaveController implements MessageListener {
 
 	public void communicateWithClient() {
 		try {
-//			while (true) {
-				SocketHandler socketHandler = new SocketHandler(serverSocket.accept(), this);
+			while (true) {
+				ServerSocketHandler serverSocketHandler = new ServerSocketHandler(serverSocket.accept(), this);
 				System.out.println("New Master Client Connected");
-//				pool.execute(socketHandler);
+				pool.execute(serverSocketHandler);
 
-				socketHandler.run(); // FIXME remove this multithreading stuff that we don't need
-//			}
+//				serverSocketHandler.run(); // FIXME remove this multithreading stuff that we don't need
+			}
 		} catch (IOException e) {
 			System.err.println("SlaveController: CommunicateWithClient error");
 			e.printStackTrace();
@@ -47,17 +47,23 @@ public class SlaveController implements MessageListener {
 	}
 	
 	public Message handleMessage(Message msg) {
+		Message msgOut = null;
 		switch (msg.getAction()) {
 			case "requestAssociationRules":
-				rulesController.calculateAssociationRules((AssociationRuleRequest) msg);
+				System.out.println("!!! slave starting requestAssociationRules"); // FIXME delete
+				msgOut = rulesController.calculateAssociationRules((AssociationRuleRequest) msg);
 				break;
 			case "test": // FIXME delete
 				return new Message("slaveControllerTestResponse");
+			case "test2":
+				return new Message("slaveControllerTestResponse2");
 			default:
-				// TODO Throw exception
+				msgOut = new Message("terminate");
+				System.err.println("Error: Message with action " + msg.getAction() + " is not recognized");
+				break;
 		}
 
-		return null;
+		return msgOut;
 	}
 
 

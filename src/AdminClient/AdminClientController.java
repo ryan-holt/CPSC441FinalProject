@@ -1,9 +1,11 @@
 package AdminClient;
 
-import util.Message;
+import util.*;
+import util.sockethandler.ClientSocketHandler;
 
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 
 /**
  * This class is responsible for communicating with the server
@@ -11,14 +13,16 @@ import java.net.*;
  * Overall the client controller is used for communication with
  * the server
  */
-public class AdminClientController {
+public class AdminClientController implements MessageListener {
 
-    //MEMBER VARIABLES
-    private ObjectOutputStream socketOut;
-    private Socket aSocket;
-    private ObjectInputStream socketIn;
+    private Socket socket;
+
+    /**
+     * BufferedReader to read in user input
+     */
     BufferedReader inFromUser;
 
+    private ClientSocketHandler clientSocketHandler;
 
     /**
      * Constructs a Client controller object
@@ -28,10 +32,9 @@ public class AdminClientController {
      */
     public AdminClientController(String serverName, int portNumber) {
         try {
-            aSocket = new Socket(serverName, portNumber);
+            socket = new Socket(serverName, portNumber);
 
-            socketOut = new ObjectOutputStream(aSocket.getOutputStream());
-            socketIn = new ObjectInputStream(aSocket.getInputStream());
+            clientSocketHandler = new ClientSocketHandler(socket, this, true);
             inFromUser = new BufferedReader(new InputStreamReader(System.in));
         } catch (IOException e) {
             e.printStackTrace();
@@ -39,7 +42,117 @@ public class AdminClientController {
     }
 
     /**
-     * runs the client side
+     * Communicates with the server, by reading the user name
+     *
+     */
+    private void communicateWithServer() {
+        System.out.println("Welcome to the administrator client. Type help to show all commands.");
+        clientSocketHandler.setNextMsgOut(getMessageFromAdminInput());
+        clientSocketHandler.communicate();
+        System.out.println();
+    }
+
+    public Message handleMessage(Message msg) {
+        Message msgOut = new Message("quit");
+        switch (msg.getAction()) {
+            case "sendCalculationResponse":
+                CalculationResponse CR = (CalculationResponse) msg;
+                displayCorrelations(CR.getCorrelations());
+                msgOut = getMessageFromAdminInput();
+                break;
+            case "sendHistoricalCalculationResponse":
+                ListHistoricalCalculationsResponse HCR = (ListHistoricalCalculationsResponse) msg;
+                System.out.println(HCR.getListOfHistoricalCalculations());
+                msgOut = getMessageFromAdminInput();
+                break;
+            case "viewHistoricalCalculation":
+                CalculationResponse historicalCR = (CalculationResponse) msg;
+                displayCorrelations(historicalCR.getCorrelations());
+                msgOut = getMessageFromAdminInput();
+                break;
+            case "FileReadingError":
+                System.out.println("Error reading file. Please ensure that the file name is spelt correctly.");
+                msgOut = getMessageFromAdminInput();
+                break;
+            case "terminate":
+                clientSocketHandler.stop(); // Server finally said to stop
+                break;
+            default:
+                msgOut.setAction("terminate");
+                System.err.println("Error: ClientController does not recognize message with action " + msg.getAction() + ", terminating");
+                break;
+        }
+
+        return msgOut;
+    }
+
+
+    /**
+     * Gets the next message to send based on commands from the admin.
+     *
+     * @return the message
+     */
+    private Message getMessageFromAdminInput() {
+        boolean invalidResponse = true;
+        Message msgOut = new Message("quit");
+        while (invalidResponse) {
+            try {
+                invalidResponse = false;
+                switch (inFromUser.readLine()) {
+                    case "calculate":
+                        msgOut = new Message("calculateCorrelation");
+                        break;
+                    case "list":
+                        msgOut = new Message("listHistoricalCalculations");
+                        break;
+                    case "get":
+                        System.out.println("Please enter the filename of a previous calculation:");
+                        msgOut = new ViewHistoricalCalculationRequest(inFromUser.readLine());
+                        break;
+                    case "help":
+                        displayAllCommands();
+                        invalidResponse = true;
+                        break;
+                    case "quit":
+                        break;
+                    default:
+                        System.err.println("Invalid Input");
+                        invalidResponse = true;
+                        break;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                invalidResponse = true;
+            }
+
+        }
+        return msgOut;
+    }
+
+    /**
+     * Display all admin client commands and their functionality.
+     */
+    private void displayAllCommands() {
+        System.out.println("calculate: Calculate and display the current keyword group correlations.");
+        System.out.println("list: List the file names for historical calculations.");
+        System.out.println("get: Show the result for a historical calculation.");
+        System.out.println("quit: Terminate the current session.");
+        System.out.println("help: Display a list of all commands and their functionality.");
+    }
+
+    /**
+     * Display all correlations.
+     *
+     * @param correlations
+     */
+    private void displayCorrelations(ArrayList<RulesCorrelation> correlations) {
+        for (RulesCorrelation correlation : correlations) {
+            System.out.println(correlation);
+        }
+    }
+
+    /**
+     * Runs the admin client side.
      *
      * @param args command line arguments
      * @throws ClassNotFoundException
@@ -47,33 +160,5 @@ public class AdminClientController {
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         AdminClientController cc = new AdminClientController("localhost", 9000);
         cc.communicateWithServer();
-    }
-
-    /**
-     * Communicates with the server, by reading the user name
-     * @throws IOException
-     * @throws ClassNotFoundException
-     */
-    public void communicateWithServer() throws IOException, ClassNotFoundException {
-        String line;
-        Message ServerE;
-        ServerE = (Message)(socketIn.readObject());
-        System.out.println(ServerE.getAction());
-        ServerE.setAction(inFromUser.readLine());
-        writeObject(ServerE);
-        ServerE = (Message)(socketIn.readObject());
-        System.out.println(ServerE.getAction());
-        ServerE.setAction(inFromUser.readLine());
-        writeObject(ServerE);
-    }
-
-    /**
-     * Writes the corresponding object to the output socket
-     * @param obj The output object
-     * @throws IOException
-     */
-    private void writeObject(Object obj) throws IOException {
-        socketOut.writeObject(obj);
-        socketOut.reset();
     }
 }

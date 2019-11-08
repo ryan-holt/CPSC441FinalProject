@@ -1,21 +1,21 @@
 package util;
 
-import java.util.ArrayList;
+import java.util.List;
 
-public class AssociationRuleResponse {
-    private int question;
-    private ArrayList<Rule> results;
+public class AssociationRuleResponse extends HostAddressMessage {
+	private int question;
+	private List<Rule> rules;
+	public AssociationRuleResponse(int question, List<Rule> rules) {
+		super("associationRulesResponse");
+		this.question = question;
+		this.rules = rules;
+	}
 
-    public AssociationRuleResponse(int question, ArrayList<Rule> results) {
-        this.question = question;
-        this.results = results;
-    }
+	public int getQuestion() {
+		return question;
+	}
 
-    public ArrayList<Rule> getResult() {
-        return results;
-    }
-
-    public int getQuestion() {
-        return question;
-    }
+	public List<Rule> getRules() {
+		return rules;
+	}
 }

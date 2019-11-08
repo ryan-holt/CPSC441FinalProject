@@ -44,49 +44,33 @@ public class DummyClient {
 	 * @throws ClassNotFoundException
 	 */
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
-		DummyClient client = new DummyClient("localhost", 9001);
+		DummyClient client = new DummyClient("localhost", 9000);
 		client.communicateWithServer();
 	}
 
 	public void communicateWithServer() throws IOException, ClassNotFoundException {
-//		Message msg = (Message)(socketIn.readObject());
-//		System.out.println(msg.getAction());
-//		msg.setAction(inFromUser.readLine());
-//		name = msg.getAction();
-//		writeObject(msg);
-//		SurveyQuestions incomingSurvey = (SurveyQuestions) socketIn.readObject();
-//		ArrayList<SurveyEntry> userSurveyAnswers = getSurveyAnswer(incomingSurvey);
-//		SurveyAnswer userAnswer = new SurveyAnswer(userSurveyAnswers);
-//		writeObject(userAnswer);
-//		System.out.println("Survey has been completed. Have a great day!");
+		Message msgOut = new Message("calculateCorrelation");
+//		Message msgOut = SlaveControllerTest.makeTestAssociationRuleRequest();
+		System.out.println("DummyClient: sending message requestAssociationRules");
 
-		Message msgOut = new Message("test");
+
 		writeObject(msgOut);
+		System.out.println("DummyClient: waiting for response...");
 		Message msgIn = (Message) socketIn.readObject();
 		System.out.println("DummyClient: msgIn action is: " + msgIn.getAction());
+
+
+		msgOut.setAction("quit");
+		writeObject(msgOut);
+		msgIn = (Message) socketIn.readObject();
+		System.out.println("DummyClient: msgIn action is: " + msgIn.getAction());
+		if (msgIn.getAction().equals("terminate")) {
+			System.out.println("DummyClient: Received termination, dying");
+			socketIn.close();
+			socketOut.close();
+			socket.close();
+		}
 	}
-
-
-//	public ArrayList<SurveyEntry> getSurveyAnswer(SurveyQuestions incomingSurvey) throws IOException {
-//		ArrayList<String> surveyQuestionList = incomingSurvey.getSurveyQuestionList();
-//		ArrayList<ArrayList<String>> surveyAnswersLists = incomingSurvey.getSurveyAnswersLists();
-//		ArrayList<SurveyEntry> userAnswers = new ArrayList<SurveyEntry>();
-//		//ArrayList<String> allResponses = new ArrayList<String>();
-//		for (int i = 0; i < surveyQuestionList.size(); i++) {
-//			boolean invalidResponse = true;
-//			while (invalidResponse) {
-//				System.out.println(surveyQuestionList.get(i));
-//				ArrayList<String> currentQuestionResponses = new ArrayList<String>(Arrays.asList(inFromUser.readLine().split("\\s+")));
-//				if (!surveyAnswersLists.get(i).containsAll(currentQuestionResponses)) {
-//					System.out.println("Invalid response, please try again.");
-//					continue;
-//				}
-//				invalidResponse = false;
-//				userAnswers.add(new SurveyEntry(name, i+1, currentQuestionResponses));
-//			}
-//		}
-//		return userAnswers;
-//	}
 
 	private void writeObject(Object obj) throws IOException {
 		socketOut.writeObject(obj);

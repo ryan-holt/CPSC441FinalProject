@@ -23,7 +23,7 @@ class SlaveControllerTest {
 		// TODO finish this test
 	}
 
-	static AssociationRuleRequest makeTestAssociationRuleRequest() {
+	public static AssociationRuleRequest makeTestAssociationRuleRequest() {
 		int question = 1;
 		ArrayList<KeywordGroup> testKeywordGroup = new ArrayList<KeywordGroup>(Arrays.asList(
 				new KeywordGroup("python", "java"),

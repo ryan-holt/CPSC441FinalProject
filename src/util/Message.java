@@ -25,4 +25,6 @@ public class Message implements Serializable{
 	public void setAction(String action) {
 		this.action = action;
 	}
+
+
 }
