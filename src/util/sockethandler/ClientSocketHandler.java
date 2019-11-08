@@ -73,7 +73,8 @@ public class ClientSocketHandler extends SocketHandler {
 		} catch (IOException e) {
 			System.err.println("Client ServerSocketHandler error. Did connection reset?");
 //			e.printStackTrace();
-			System.exit(-1);
+//			System.exit(-1);
+			stop();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
