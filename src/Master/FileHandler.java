@@ -71,6 +71,20 @@ public class FileHandler {
      * @param correlationScores ArrayList that holds all the correlation scores
      * @throws IOException
      */
+    public void writeScoresToFile(ArrayList<RulesCorrelation> correlationScores) throws IOException {
+        BufferedWriter outputWriter = new BufferedWriter(new FileWriter(scorePath, true));
+        for(RulesCorrelation correlationInfo: correlationScores) {
+            outputWriter.write(correlationInfo.toString() + "\n");
+        }
+        outputWriter.flush();
+        outputWriter.close();
+    }
+
+    /**
+     * writes the correlation scores to a file
+     * @param correlationScores ArrayList that holds all the correlation scores
+     * @throws IOException
+     */
     public String getListOfHistoricalCorrelation(){
         File[] files = new File(System.getProperty("user.dir") + File.separator + "HistoricalCorrelations").listFiles();
         StringBuilder stringList = new StringBuilder();

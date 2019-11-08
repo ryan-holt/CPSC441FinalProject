@@ -10,3 +10,7 @@
 2	Jane	Walmart
 3	Jane	Tetris
 4	Jane	Running
+1	Sleep	Python,Java
+2	Sleep	Walmart,Dollarama
+3	Sleep	Foosball
+4	Sleep	Swimming,Boxing,Running

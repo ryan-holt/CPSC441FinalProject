@@ -187,6 +187,96 @@ public class MasterController implements MessageListener {
 	    }
     }
 
+	/**
+	 * Order the survey entries by question into a hashmap
+	 * @param entries the arraylist that holds the entry information
+	 * @return hashmap with all the ordered information
+	 */
+	HashMap<Integer,ArrayList<SurveyEntry>> orderEntriesByQuestion(ArrayList<SurveyEntry> entries) {
+		HashMap<Integer,ArrayList<SurveyEntry>> orderedEntries = new HashMap<>();
+		for(int i = 0; i < entries.size(); i++) {
+			if(!orderedEntries.containsKey(entries.get(i).getQuestion())) {
+				orderedEntries.put(entries.get(i).getQuestion(),new ArrayList<SurveyEntry>());
+			}
+			orderedEntries.get(entries.get(i).getQuestion()).add(entries.get(i));
+		}
+		System.out.println("HashMap orderedEntriesByQuestion: " + orderedEntries.keySet());
+		return orderedEntries;
+	}
+
+	/**
+	 * Gets the keyword groups per question, and sorts in a hash map
+	 * @return Hashmap that has all the keyword groups ordered by question
+	 */
+	HashMap<Integer,ArrayList<KeywordGroup>> getKeywordGroupsByQuestion() {
+		HashMap<Integer,ArrayList<KeywordGroup>> keywordGroups = new HashMap<>();
+		SurveyQuestions surveyQuestions = new SurveyQuestions();
+		for(int i = 0; i < surveyQuestions.getSurveyAnswersLists().size(); i++) {
+			for(int j = 0; j < surveyQuestions.getSurveyAnswersLists().get(i).size(); j++) {
+				for(int k = j+1; k < surveyQuestions.getSurveyAnswersLists().get(i).size(); k++) {
+					if (!keywordGroups.containsKey(i + 1)) {
+						keywordGroups.put(i + 1, new ArrayList<KeywordGroup>());
+					}
+					ArrayList<String> tempCombo = new ArrayList<>();
+					tempCombo.add(surveyQuestions.getSurveyAnswersLists().get(i).get(j));
+					tempCombo.add(surveyQuestions.getSurveyAnswersLists().get(i).get(k));
+					KeywordGroup tempGroup = new KeywordGroup(tempCombo);
+					keywordGroups.get(i + 1).add(tempGroup);
+				}
+			}
+		}
+		System.out.println("HashMap keywordGroups: " + keywordGroups.keySet());
+		return keywordGroups;
+	}
+
+	/**
+	 * Creates association rule request objects to be sent to the slave for calculations
+	 * @param entriesByQuestion object that holds survey entries ordered by question
+	 * @param keywordsByQuestion object that holds keyword combinations ordered by question
+	 * @return the association rule request object
+	 */
+	ArrayList<AssociationRuleRequest> createAssociationRuleRequests(HashMap<Integer,ArrayList<SurveyEntry>> entriesByQuestion, HashMap<Integer,ArrayList<KeywordGroup>> keywordsByQuestion) {
+		ArrayList<AssociationRuleRequest> associationRulePackage = new ArrayList<>();
+		for(int i = 0; i < 4; i++) {
+			associationRulePackage.add(new AssociationRuleRequest(i+1,keywordsByQuestion.get(i+1), entriesByQuestion.get(i+1)));
+		}
+		System.out.println("ArrayList associationRulePackage: " + associationRulePackage);
+		return associationRulePackage;
+	}
+
+	/**
+	 * sends the association rule package to the slaves
+	 */
+	void sendRuleRequestsToSlaves() {
+		System.out.println("Sending rule requests to slaves.");
+	}
+
+	/**
+	 * Returns an arraylist of rule correlation requests
+	 * @param ruleResponses the rule responses
+	 * @return the arraylist of rule correlation requests
+	 */
+	ArrayList<RuleCorrelationRequest> createRuleCorrelationRequests(Map<Integer, AssociationRuleResponse> ruleResponses) {
+		ArrayList<RuleCorrelationRequest> outputList = new ArrayList<RuleCorrelationRequest>();
+		for(int i = 1; i <= ruleResponses.size(); i++) {
+			for(int j=0; j < ruleResponses.get(i).getRules().size(); j++) {
+				if(i+1 <= ruleResponses.size()) {
+					ArrayList<Rule> ruleCorrelationArray = new ArrayList<>();
+					ruleCorrelationArray.add(ruleResponses.get(i).getRules().get(j));
+					outputList.add(new RuleCorrelationRequest("baseRule", ruleCorrelationArray));
+					for (int k = i + 1; k <= ruleResponses.size(); k++) {
+						ruleCorrelationArray = new ArrayList<>();
+						for (int l = 0; l < ruleResponses.get(k).getRules().size(); l++) {
+							ruleCorrelationArray.add(ruleResponses.get(k).getRules().get(l));
+						}
+						outputList.add(new RuleCorrelationRequest("rule", ruleCorrelationArray));
+					}
+				}
+			}
+		}
+		return outputList;
+	}
+
     // TODO Assign return type message
     private synchronized void calculateCorrelation() {
     	// TODO get the associationRulesRequests
