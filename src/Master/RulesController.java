@@ -125,7 +125,7 @@ public class RulesController {
 	}
 
 	public List<RulesCorrelation> getTopCorrelations() {
-		int maxEntries = 10;
+		int maxEntries = 30;
 
 		// Get all the correlations out of their individual responses and into a single list
 		List<RulesCorrelation> correlations = new ArrayList<>(correlationResponses.size() * maxEntries);
@@ -133,7 +133,7 @@ public class RulesController {
 
 		// Cut down on the list to the top 10 only
 		return correlations.stream()
-				.sorted((a, b) -> (int) (a.getScore() - b.getScore()))
+				.sorted((a, b) -> -1 * ((Double) a.getScore()).compareTo(b.getScore()))
 				.limit(maxEntries)
 				.collect(Collectors.toList());
 	}

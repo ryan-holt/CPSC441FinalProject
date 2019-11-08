@@ -41,7 +41,8 @@ public class SlaveRulesController {
 				.collect(Collectors.toList());
 	}
 
-	private void countKeywordEntries(List<KeywordGroup> groups, List<SurveyEntry> entries,
+	private void countKeywordEntries(List<KeywordGroup> groups,
+	                                 List<SurveyEntry> entries,
 	                                 Map<String, Integer> keywordCounts,
 	                                 Map<KeywordGroup, GroupUsersData> groupUsers) {
 		ArrayList<String> selections;
@@ -51,7 +52,7 @@ public class SlaveRulesController {
 
 			for (KeywordGroup group : groups) {
 				if (selections.containsAll(group.getKeywords())) {
-					groupUsers.get(group).users.add(entry.getUser());
+					groupUsers.get(group).users.add(entry.getUser()); // Increment the count by adding a user
 				}
 			}
 
@@ -75,7 +76,7 @@ public class SlaveRulesController {
 	private List<Rule> calculateRulesScores(double entriesCount, List<KeywordGroup> groups,
 	                                                       Map<String, Integer> keywordCounts, Map<KeywordGroup, GroupUsersData> groupUsers) {
 		List<Rule> rules = new LinkedList<>();
-		int maxEntries = 10;
+		int maxEntries = 30;
 		Rule lowestScoreRule = null;
 		double lowestScore = 99999; // Impossibly high score, highest score = 1
 
@@ -85,7 +86,7 @@ public class SlaveRulesController {
 			double groupCount = (double) data.size();
 			List<String> users = data.users; // Get the users
 
-			if (entriesCount <= 0) {
+			if (groupCount <= 0 || entriesCount <= 0) {
 				continue; // Omit zero-sized entries
 			}
 
@@ -94,7 +95,7 @@ public class SlaveRulesController {
 			for (String keyword : keywords) {
 				double keywordCount = (double) keywordCounts.get(keyword);
 
-				if (entriesCount <= 0) {
+				if (keywordCount <= 0) {
 					continue; // Omit zero-sized entries
 				}
 
@@ -127,7 +128,7 @@ public class SlaveRulesController {
 		}
 		
 		rules.forEach(r -> r.sortUsers()); // Sort the users
-		Collections.sort(rules, (a, b) -> (int)(a.getScore() - b.getScore()));
+		rules = rules.stream().sorted((a, b) -> -1 * ((Double) a.getScore()).compareTo(b.getScore())).collect(Collectors.toList());
 		return rules;
 	}
 
@@ -198,10 +199,10 @@ public class SlaveRulesController {
 	}
 
 	private List<RulesCorrelation> filterTopCorrelations(List<RulesCorrelation> correlations) {
-		int maxCorrelations = 10;
+		int maxCorrelations = 30;
 		return correlations.stream()
 				.filter(c -> c.getScore() >  0)
-				.sorted((a, b) -> (int)(a.getScore() - b.getScore()))
+				.sorted((a, b) -> -1 * ((Double) a.getScore()).compareTo(b.getScore()))
 				.limit(maxCorrelations)
 				.collect(Collectors.toList());
 	}

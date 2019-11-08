@@ -134,14 +134,10 @@ public class MasterController implements MessageListener {
 		    	msgOut.setAction("finishedSurvey");
 		    	break;
 		    case "calculateCorrelation":
-				calculateCorrelation();
-				//TODO Uncomment when we get correlations from calculateCorrelations -- this function works already =)
-				//fileHandler.writeCorrelationsToFile(correlations);
-				//TODO DUMMY OUTPUT to be deleted and replaced
-				msgOut = getHistoricalCalculationResponse("test.txt");
+				msgOut = calculateCorrelation(); // Run the really big calculation
 			    break;
 		    case "associationRulesResponse":
-//		    	addRuleResponseAndSendNext((AssociationRuleResponse) msg); // TODO clean out and delete, bypass error message - handle with futures instead
+				// TODO clean out and delete, bypass error message
 		    	break;
 		    case "ruleCorrelationResponse":
 		    	// TODO clean out and delete, bypass error message
@@ -225,7 +221,6 @@ public class MasterController implements MessageListener {
 			}
 			orderedEntries.get(entries.get(i).getQuestion()).add(entries.get(i));
 		}
-		System.out.println("HashMap orderedEntriesByQuestion: " + orderedEntries.keySet());
 		return orderedEntries;
 	}
 
@@ -265,16 +260,19 @@ public class MasterController implements MessageListener {
 		for(int i = 0; i < 4; i++) {
 			associationRulePackage.add(new AssociationRuleRequest(i+1,keywordsByQuestion.get(i+1), entriesByQuestion.get(i+1)));
 		}
-		System.out.println("ArrayList associationRulePackage: " + associationRulePackage);
 		return associationRulePackage;
 	}
 
     // TODO Assign return type message
-    private synchronized void calculateCorrelation() {
+    private synchronized CalculationResponse calculateCorrelation() {
 	    List<AssociationRuleRequest> requests = prepareAssociationRuleRequests();
 
+	    clientFutures.clear();
+	    // Custom reset function to make latch re-usable
+	    latch.reset();
+
 	    if (latch.getCount() != threadCount) {
-		    System.err.println("Error, expected latch to have count " + threadCount + " but count was only" + latch.getCount());
+		    System.err.println("Error, expected latch to have count " + threadCount + " but count was only " + latch.getCount());
 		    System.exit(-1);
 	    }
 
@@ -325,7 +323,9 @@ public class MasterController implements MessageListener {
 	    }
 
 	    List<RulesCorrelation> topCorrelations = rulesController.getTopCorrelations();
-	    System.out.println("!!! Done calculating correlations"); // FIXME delete
+	    fileHandler.writeCorrelationsToFile(topCorrelations);
+
+	    return createCalculationResponse(topCorrelations);
     }
 
     private synchronized void waitForSlaveRuleExecution() {
@@ -396,7 +396,6 @@ public class MasterController implements MessageListener {
 
 		// If any other messages need to be sent...
 		if (clientSocketHandler != null) {
-			System.out.println("!!! clientSocketHandler at " + clientSocketHandler.getServerIp()); // FIXME delete
 			clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 
 			waitForSlaveRuleExecution();
@@ -411,13 +410,16 @@ public class MasterController implements MessageListener {
 
     	// If any other messages need to be sent...
     	if (clientSocketHandler != null) {
-		    System.out.println("!!! clientSocketHandler at " + clientSocketHandler.getServerIp()); // FIXME delete
 		    clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 
 		    waitForSlaveCorrelationExecution();
 	    } else {
     		latchCountDown();
 	    }
+    }
+
+    private CalculationResponse createCalculationResponse(List<RulesCorrelation> correlations) {
+		return new CalculationResponse(correlations);
     }
 
     public static void main(String[] args) {

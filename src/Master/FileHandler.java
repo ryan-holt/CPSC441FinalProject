@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class FileHandler {
 
@@ -71,16 +72,19 @@ public class FileHandler {
      * @param correlationScores ArrayList that holds all the correlation scores
      * @throws IOException
      */
-    public void writeCorrelationsToFile(ArrayList<RulesCorrelation> correlationScores) throws IOException {
+    public void writeCorrelationsToFile(List<RulesCorrelation> correlationScores) {
         String dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy-HH-mm-ss"));
         String newFilePath = historicalCorrelationsPath + File.separator + dateTime +"_correlations.txt";
         File newFile = new File(newFilePath);
-        BufferedWriter outputWriter = new BufferedWriter(new FileWriter(newFile));
-        for(RulesCorrelation correlationInfo: correlationScores) {
-            outputWriter.write( correlationInfo + "\n");
+        try (BufferedWriter outputWriter = new BufferedWriter(new FileWriter(newFile))) {
+	        for (RulesCorrelation correlationInfo : correlationScores) {
+		        outputWriter.write(correlationInfo + "\n");
+	        }
+	        outputWriter.flush();
+	        outputWriter.close();
+        } catch (IOException e) {
+        	e.printStackTrace();
         }
-        outputWriter.flush();
-        outputWriter.close();
     }
 
     /**
