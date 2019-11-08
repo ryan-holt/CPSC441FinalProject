@@ -23,3 +23,5 @@ To run the project on the Cybera RAC:
 9. The admin has several options. Type `help` to view all options. Type `calculate` to begin the correlation algorithm.
 
 NOTE: This project currently only supports all applications running on `localhost`, though it can be expanded to operate on different machines.
+
+For extra documenation you may view our github page at: https://github.com/ryan-holt/CPSC441FinalProject
