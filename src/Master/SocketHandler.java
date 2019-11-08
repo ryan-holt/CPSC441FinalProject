@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import util.*;
@@ -41,6 +42,7 @@ public class SocketHandler implements Runnable {
     private FileHandler fileHandler;
 
     public SocketHandler(Socket s, MasterController masterController) {
+        fileHandler = new FileHandler();
         try {
             aSocket = s;
             setMasterController(masterController);
@@ -121,7 +123,6 @@ public class SocketHandler implements Runnable {
         SurveyQuestions newSurvey = new SurveyQuestions();
         writeObject(newSurvey);
         SurveyAnswer clientAnswer = (SurveyAnswer) socketIn.readObject();
-        fileHandler = new FileHandler();
         fileHandler.writeArrayToFile(clientAnswer.getAnswer());
     }
 
@@ -134,6 +135,35 @@ public class SocketHandler implements Runnable {
         HashMap<Integer,ArrayList<SurveyEntry>> entriesByQuestion = orderEntriesByQuestion(entries);
         HashMap<Integer,ArrayList<KeywordGroup>> keywordsByQuestion = getKeywordGroupsByQuestion();
         ArrayList<AssociationRuleRequest> ruleRequests = createAssociationRuleRequests(entriesByQuestion, keywordsByQuestion);
+
+        //TESTING ASSOCIATIONSTUFF HERE
+        //TODO: REMOVE ONCE DONE
+        Map<Integer, AssociationRuleResponse> testMap = new HashMap<>();
+        ArrayList<Rule> testArray = new ArrayList<>();
+        ArrayList<String> tempList = new ArrayList<>();
+        tempList.add("Bob"); tempList.add("Frank"); tempList.add("Jane");
+        testArray.add(new Rule(new KeywordGroup("Python", "Java"), 0.97, tempList));
+        AssociationRuleResponse testResponse = new AssociationRuleResponse(1, testArray);
+        testMap.put(1, testResponse);
+        ArrayList<Rule> testArray2 = new ArrayList<>();
+        ArrayList<String> tempList2 = new ArrayList<>();
+        tempList2.add("Alice"); tempList2.add( "Jane"); tempList2.add("Kevin");
+        testArray2.add(new Rule(new KeywordGroup("Superstore", "H&M"), 0.92, tempList2));
+        ArrayList<String> tempList3 = new ArrayList<>();
+        tempList3.add("Frank"); tempList3.add("Uaran"); tempList3.add("Reacat");
+        testArray2.add(new Rule(new KeywordGroup("Superstore", "Walmart"), 0.87, tempList3));
+        AssociationRuleResponse testResponse2 = new AssociationRuleResponse(2, testArray2);
+        testMap.put(2, testResponse2);
+        ArrayList<RuleCorrelationRequest> correlationRequestList = createRuleCorrelationRequests(testMap);
+
+        //TODO: REMOVE ONCE DONE
+        ArrayList<RulesCorrelation> correlationScoresList = new ArrayList<>();
+        ArrayList<KeywordGroup> keywordList = new ArrayList<>();
+        keywordList.add(new KeywordGroup("Ryan", "Holt"));
+        keywordList.add(new KeywordGroup("Tyler", "Lam"));
+        correlationScoresList.add(new RulesCorrelation(keywordList, 0.69));
+        fileHandler.writeScoresToFile(correlationScoresList);
+        ArrayList<RulesCorrelation> result = fileHandler.readScoresFromFile();
 
         sendRuleRequestsToSlaves();
     }
@@ -209,17 +239,19 @@ public class SocketHandler implements Runnable {
      */
     ArrayList<RuleCorrelationRequest> createRuleCorrelationRequests(Map<Integer, AssociationRuleResponse> ruleResponses) {
         ArrayList<RuleCorrelationRequest> outputList = new ArrayList<RuleCorrelationRequest>();
-        for(int i = 0; i < 3; i++) {
-            for(int j=0; j < ruleResponses.get(i).getResult().size(); i++) {
-                ArrayList<Rule> ruleCorrelationArray = new ArrayList<>();
-                ruleCorrelationArray.add(ruleResponses.get(i).getResult().get(j));
-                outputList.add(new RuleCorrelationRequest("baseRule", ruleCorrelationArray));
-                for (int k = i + 1; k < 4; k++) {
-                    ruleCorrelationArray = new ArrayList<>();
-                    for(int l = 0; i < ruleResponses.get(k).getResult().size(); l++) {
-                        ruleCorrelationArray.add(ruleResponses.get(k).getResult().get(l));
+        for(int i = 1; i <= ruleResponses.size(); i++) {
+            for(int j=0; j < ruleResponses.get(i).getResult().size(); j++) {
+                if(i+1 <= ruleResponses.size()) {
+                    ArrayList<Rule> ruleCorrelationArray = new ArrayList<>();
+                    ruleCorrelationArray.add(ruleResponses.get(i).getResult().get(j));
+                    outputList.add(new RuleCorrelationRequest("baseRule", ruleCorrelationArray));
+                    for (int k = i + 1; k <= ruleResponses.size(); k++) {
+                        ruleCorrelationArray = new ArrayList<>();
+                        for (int l = 0; l < ruleResponses.get(k).getResult().size(); l++) {
+                            ruleCorrelationArray.add(ruleResponses.get(k).getResult().get(l));
+                        }
+                        outputList.add(new RuleCorrelationRequest("rule", ruleCorrelationArray));
                     }
-                    outputList.add(new RuleCorrelationRequest("rule", ruleCorrelationArray));
                 }
             }
         }

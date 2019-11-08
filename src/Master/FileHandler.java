@@ -5,10 +5,14 @@ package Master;
  * @since November 1st 2019
  * @version 1.0
  */
+import util.KeywordGroup;
+import util.RulesCorrelation;
 import util.SurveyEntry;
+import java.time.*;
 
 import java.io.*;
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -18,9 +22,13 @@ public class FileHandler {
      * Filepath for the text-based database
      */
     String filepath;
+    String scorePath;
+    DateTimeFormatter dtf;
+    LocalDateTime now;
 
     public FileHandler() {
         filepath = System.getProperty("user.dir") + "\\SurveyEntries.txt";
+        scorePath = System.getProperty("user.dir") + "\\correlationScores.txt";
     }
 
     /**
@@ -56,5 +64,43 @@ public class FileHandler {
         }
         outputWriter.flush();
         outputWriter.close();
+    }
+
+    /**
+     * writes the correlation scores to a file
+     * @param correlationScores ArrayList that holds all the correlation scores
+     * @throws IOException
+     */
+    public void writeScoresToFile(ArrayList<RulesCorrelation> correlationScores) throws IOException {
+        BufferedWriter outputWriter = new BufferedWriter(new FileWriter(scorePath, true));
+        for(RulesCorrelation correlationInfo: correlationScores) {
+            outputWriter.write(correlationInfo.toString() + "\n");
+        }
+        outputWriter.flush();
+        outputWriter.close();
+    }
+
+    /**
+     * Reads the correlation scores from a file
+     * @return returns a arraylist with the score information
+     * @throws IOException
+     */
+    public ArrayList<RulesCorrelation> readScoresFromFile() throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(scorePath));
+        ArrayList<RulesCorrelation> correlationScoresList = new ArrayList<>();
+        String line;
+        String[] lineSplit;
+        while((line = reader.readLine()) != null) {
+            ArrayList<KeywordGroup> keywordList = new ArrayList<>();
+            lineSplit = line.split(":");
+            String[] keywordPairSplit = lineSplit[0].split("\\), \\(");
+            for(String keyword: keywordPairSplit) {
+                keyword = keyword.replace("(","").replace(")", "");
+                String[] keywordSplit = keyword.split(",");
+                keywordList.add(new KeywordGroup(keywordSplit[0].trim(), keywordSplit[1].trim()));
+            }
+            correlationScoresList.add(new RulesCorrelation(keywordList, Double.parseDouble(lineSplit[1].trim())));
+        }
+        return correlationScoresList;
     }
 }
