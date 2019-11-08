@@ -63,14 +63,15 @@ public class RulesController {
 
 	/**
 	 * Returns an arraylist of rule correlation requests
+	 *
 	 * @param ruleResponses the rule responses
 	 * @return the arraylist of rule correlation requests
 	 */
-	ArrayList<RuleCorrelationRequest> createRuleCorrelationRequests(Map<Integer, AssociationRuleResponse> ruleResponses) {
+	ArrayList<RuleCorrelationRequest> createRuleCorrelationRequests() {
 		ArrayList<RuleCorrelationRequest> outputList = new ArrayList<RuleCorrelationRequest>();
-		for(int i = 1; i <= ruleResponses.size(); i++) {
-			for(int j=0; j < ruleResponses.get(i).getRules().size(); j++) {
-				if(i+1 <= ruleResponses.size()) {
+		for (int i = 1; i <= ruleResponses.size(); i++) {
+			for (int j = 0; j < ruleResponses.get(i).getRules().size(); j++) {
+				if (i + 1 <= ruleResponses.size()) {
 					ArrayList<Rule> ruleCorrelationArray = new ArrayList<>();
 					ruleCorrelationArray.add(ruleResponses.get(i).getRules().get(j));
 					outputList.add(new RuleCorrelationRequest("baseRule", ruleCorrelationArray));
@@ -97,6 +98,7 @@ public class RulesController {
 
 	/**
 	 * Append the element onto the sharedList. Used for shared resources in multithreading.
+	 *
 	 * @param sharedList
 	 * @param appendElement
 	 * @param <T>
@@ -107,6 +109,7 @@ public class RulesController {
 
 	/**
 	 * Append the appendList onto the sharedList. Used for shared resources in multithreading
+	 *
 	 * @param sharedList
 	 * @param appendList
 	 * @param <T>
@@ -122,7 +125,7 @@ public class RulesController {
 		return sharedList.remove(0);
 	}
 
-	private synchronized  <T> void clearSharedList(List<T> sharedList) {
+	private synchronized <T> void clearSharedList(List<T> sharedList) {
 		sharedList.clear();
 	}
 }
