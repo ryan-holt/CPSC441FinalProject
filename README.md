@@ -17,9 +17,8 @@ To run the project on the Cybera RAC:
 * java -jar CPSC441-FinalProjectUser.jar
 5. Once the client starts, please enter your name.
 6. A survey will appear. You may select more than one answer for each question (and are encouraged to do so). Please enter the the survey answers, delimited by a space. For example, enter `Python Java` to select the choices Python and Java respectively. 
-7. To run the admin, run the JAR `CPSC441-FinalProjectAdmin.jar`.
+7. To run the admin, run the JAR `CPSC441-FinalProjectAdmin.jar`
 * java -jar CPSC441-FinalProjectAdmin.jar
-
 8 (optional). Add the file `SurveyEntries.txt` into the project directory to use a pre-populated set of survey answers.
 9. The admin has several options. Type `help` to view all options. Type `calculate` to begin the correlation algorithm.
 
