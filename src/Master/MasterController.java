@@ -134,7 +134,9 @@ public class MasterController implements MessageListener {
 		    	msgOut.setAction("finishedSurvey");
 		    	break;
 		    case "calculateCorrelation":
-				calculateCorrelation();
+				//calculateCorrelation();
+				//TODO Uncomment when we get correlations from calculateCorrelations -- this function works already =)
+				//fileHandler.writeCorrelationsToFile(correlations);
 				//TODO DUMMY OUTPUT to be deleted and replaced
 				msgOut = getHistoricalCalculationResponse("test.txt");
 			    break;
@@ -146,7 +148,7 @@ public class MasterController implements MessageListener {
 			    System.out.println(HCList);
 			    msgOut = new ListHistoricalCalculationsResponse(HCList);
 			    break;
-		    case "viewHistoricalCorrelation":
+		    case "viewHistoricalCalculation":
 			    String filename = ((ViewHistoricalCalculationRequest) msg).getCalculationFilename();
 			    msgOut = getHistoricalCalculationResponse(filename);
 			    break;
@@ -196,7 +198,12 @@ public class MasterController implements MessageListener {
 	 * @throws IOException
 	 */
 	public ArrayList<AssociationRuleRequest> prepareAssociationRuleRequests() {
-		ArrayList<SurveyEntry> entries = fileHandler.ReadFromFile();
+		ArrayList<SurveyEntry> entries = null;
+		try {
+			entries = fileHandler.ReadFromFile();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		HashMap<Integer,ArrayList<SurveyEntry>> entriesByQuestion = orderEntriesByQuestion(entries);
 		HashMap<Integer,ArrayList<KeywordGroup>> keywordsByQuestion = getKeywordGroupsByQuestion();
 		return createAssociationRuleRequests(entriesByQuestion, keywordsByQuestion);

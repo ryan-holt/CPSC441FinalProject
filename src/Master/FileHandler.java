@@ -21,14 +21,14 @@ public class FileHandler {
     /**
      * Filepath for the text-based database
      */
-    String surveyEntriesFilePath;
-    String scorePath;
+    private String surveyEntriesFilePath;
+    private String historicalCorrelationsPath;
     DateTimeFormatter dtf;
     LocalDateTime now;
 
     public FileHandler() {
-        surveyEntriesFilePath = System.getProperty("user.dir") + "\\SurveyEntries.txt";
-        scorePath = System.getProperty("user.dir") + "\\correlationScores.txt";
+        surveyEntriesFilePath = System.getProperty("user.dir") + File.separator + "SurveyEntries.txt";
+        historicalCorrelationsPath = System.getProperty("user.dir") + File.separator + "HistoricalCorrelations";
     }
 
     /**
@@ -36,25 +36,19 @@ public class FileHandler {
      * @return ArrayList responses
      * @throws IOException
      */
-    public ArrayList<SurveyEntry> ReadFromFile() {
+    public ArrayList<SurveyEntry> ReadFromFile() throws IOException {
         ArrayList<SurveyEntry> responses = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(surveyEntriesFilePath))) {
-
-	        String line;
-	        while ((line = reader.readLine()) != null) {
-		        String[] lineSplit = line.split("\t");
-		        String[] entrySplit = lineSplit[2].split(",");
-		        ArrayList<String> entryList = new ArrayList<>(Arrays.asList(entrySplit));
-		        SurveyEntry tempEntry = new SurveyEntry(lineSplit[1], Integer.parseInt(lineSplit[0]), entryList);
-		        responses.add(tempEntry);
-	        }
-	        reader.close();
-	        return responses;
-        } catch (IOException e) {
-        	e.printStackTrace();
+        BufferedReader reader = new BufferedReader(new FileReader(surveyEntriesFilePath));
+        String line;
+        while((line = reader.readLine()) != null) {
+            String[] lineSplit = line.split("\t");
+            String[] entrySplit = lineSplit[2].split(",");
+            ArrayList<String> entryList = new ArrayList<>(Arrays.asList(entrySplit));
+            SurveyEntry tempEntry = new SurveyEntry(lineSplit[1], Integer.parseInt(lineSplit[0]),entryList);
+            responses.add(tempEntry);
         }
-
-        return null;
+        reader.close();
+        return responses;
     }
 
     /**
@@ -77,21 +71,24 @@ public class FileHandler {
      * @param correlationScores ArrayList that holds all the correlation scores
      * @throws IOException
      */
-    public void writeScoresToFile(ArrayList<RulesCorrelation> correlationScores) throws IOException {
-        BufferedWriter outputWriter = new BufferedWriter(new FileWriter(scorePath, true));
+    public void writeCorrelationsToFile(ArrayList<RulesCorrelation> correlationScores) throws IOException {
+        String dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy-HH-mm-ss"));
+        String newFilePath = historicalCorrelationsPath + File.separator + dateTime +"_correlations.txt";
+        File newFile = new File(newFilePath);
+        BufferedWriter outputWriter = new BufferedWriter(new FileWriter(newFile));
         for(RulesCorrelation correlationInfo: correlationScores) {
-            outputWriter.write(correlationInfo.toString() + "\n");
+            outputWriter.write( correlationInfo + "\n");
         }
         outputWriter.flush();
         outputWriter.close();
     }
 
     /**
-     * writes the correlation scores to a file
-     * @throws IOException
+     * Get historical correlations from file.
+     * @return historical correlations
      */
     public String getListOfHistoricalCorrelation(){
-        File[] files = new File(System.getProperty("user.dir") + File.separator + "HistoricalCorrelations").listFiles();
+        File[] files = new File(historicalCorrelationsPath).listFiles();
         StringBuilder stringList = new StringBuilder();
         int i = 0;
         for (File file : files) {
