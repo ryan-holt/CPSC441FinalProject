@@ -1,5 +1,6 @@
 package Master;
 
+import com.sun.deploy.util.SessionState;
 import util.*;
 import util.sockethandler.ClientSocketHandler;
 import util.sockethandler.ServerSocketHandler;
@@ -10,8 +11,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * This class is responsible for managing the thread pool as well as
@@ -44,7 +44,10 @@ public class MasterController implements MessageListener {
 
     private ServerSocketHandler serverSocketHandler;
     private LinkedHashMap<String, ClientSocketHandler> clientSocketHandlers;
-
+	/**
+	 * A list of future objects used to ensure full completion
+	 */
+	private Map<ClientSocketHandler, Future> clientFutures;
 
 
     public MasterController() {
@@ -72,6 +75,7 @@ public class MasterController implements MessageListener {
 	 */
 	private void initializeClientSocketHandlers() throws IOException {
 		clientSocketHandlers = new LinkedHashMap<>();
+		clientFutures = new HashMap<>();
 	    for (int i = 0; i < CLIENT_IPS.length; i++) {
 	    	String clientIP = CLIENT_IPS[i];
 	    	int clientPort = CLIENT_PORTS[i];
@@ -129,7 +133,7 @@ public class MasterController implements MessageListener {
 			    calculateCorrelation();
 			    break;
 		    case "associationRulesResponse":
-		    	addRuleResponseAndSendNext((AssociationRuleResponse) msg);
+//		    	addRuleResponseAndSendNext((AssociationRuleResponse) msg); // TODO consider deleting - handle with futures instead
 		    	break;
 		    case "listHistoricalCorrelation":
 			    // TODO finish
@@ -187,22 +191,24 @@ public class MasterController implements MessageListener {
 	    AssociationRuleRequest testRequest = new AssociationRuleRequest(1, testKeywordGroup, testEntries);
 
 	    List<AssociationRuleRequest> requests = new ArrayList<>();
-	    requests.add(testRequest); // FIXME delete
-//	    requests.add(new AssociationRuleRequest(2, testKeywordGroup, testEntries)); // TODO Fix multithreading issues
+	    // FIXME delete
+	    requests.add(testRequest);
+	    requests.add(new AssociationRuleRequest(2, testKeywordGroup, testEntries));
 
 	    if (latch.getCount() != threadCount) {
 		    System.err.println("Error, expected latch to have count " + threadCount + " but count was only" + latch.getCount());
 		    System.exit(-1);
 	    }
-	    System.out.println("!!! latch is at: " + latch.getCount()); // FIXME delete
 
 	    rulesController.setRuleRequests(requests);
 
 		rulesController.batchStartRuleRequests(threadCount, clientSocketHandlers);
 
 	    for (ClientSocketHandler clientSocketHandler : clientSocketHandlers.values()) {
-	    	pool.execute(clientSocketHandler);
+	    	clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 	    }
+
+	    waitForSlaveExecution();
 
 	    try {
 		    latch.await();
@@ -210,21 +216,52 @@ public class MasterController implements MessageListener {
 		    e.printStackTrace();
 	    }
 
-
-	    System.out.println("!!! latch is no longer waiting!"); // FIXME delete
 	    rulesController.createRuleCorrelationRequests();
     }
 
-    private synchronized void addRuleResponseAndSendNext(AssociationRuleResponse response) {
-    	ClientSocketHandler nextSocketHandler = rulesController.addRuleResponse(response, clientSocketHandlers);
+    private synchronized void waitForSlaveExecution() {
+	    boolean isWaiting = true;
+	    Iterator<Map.Entry<ClientSocketHandler, Future>> iterator;
+	    while (isWaiting) {
+		    isWaiting = false;
+
+		    iterator = clientFutures.entrySet().iterator();
+		    while (iterator.hasNext()) {
+			    Map.Entry<ClientSocketHandler, Future> entry = iterator.next();
+			    ClientSocketHandler clientSocketHandler = entry.getKey();
+			    Future future = entry.getValue();
+
+			    try {
+				    future.get(3, TimeUnit.SECONDS);
+			    } catch (InterruptedException e) {
+				    e.printStackTrace();
+			    } catch (ExecutionException e) {
+				    e.printStackTrace();
+			    } catch (TimeoutException e) {
+				    isWaiting = true;
+				    continue; // Not ready yet, go back to waiting...
+			    }
+
+			    iterator.remove(); // Done with this entry, remove
+
+			    // Recursive call
+			    addRuleResponseAndSendNext(clientSocketHandler, (AssociationRuleResponse) clientSocketHandler.getLastMsgIn());
+
+		    }
+	    }
+    }
+
+    private synchronized void addRuleResponseAndSendNext(ClientSocketHandler clientSocketHandler, AssociationRuleResponse response) {
+		clientSocketHandler = rulesController.addRuleResponse(response, clientSocketHandlers);
 
     	// If any other messages need to be sent...
-    	if (nextSocketHandler != null) {
-		    System.out.println("!!! clientSocketHandler at " + nextSocketHandler.getServerIp());
-		    pool.execute(nextSocketHandler);
+    	if (clientSocketHandler != null) {
+		    System.out.println("!!! clientSocketHandler at " + clientSocketHandler.getServerIp());
+		    clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
+
+		    waitForSlaveExecution();
 	    } else {
     		latchCountDown();
-		    System.out.println("!!! latch decremented to " + latch.getCount()); // FIXME delete
 	    }
     }
 
