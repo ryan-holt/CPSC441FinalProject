@@ -232,7 +232,7 @@ public class MasterController implements MessageListener {
 			    Future future = entry.getValue();
 
 			    try {
-				    future.get(3, TimeUnit.SECONDS);
+				    future.get(100, TimeUnit.MILLISECONDS);
 			    } catch (InterruptedException e) {
 				    e.printStackTrace();
 			    } catch (ExecutionException e) {
