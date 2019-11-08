@@ -1,9 +1,6 @@
 package Master;
 
-import util.AssociationRuleRequest;
-import util.AssociationRuleResponse;
-import util.Rule;
-import util.RuleCorrelationRequest;
+import util.*;
 import util.sockethandler.ClientSocketHandler;
 
 import java.util.ArrayList;
@@ -19,6 +16,9 @@ public class RulesController {
 	private List<AssociationRuleRequest> ruleRequests;
 	private List<AssociationRuleResponse> ruleResponses;
 
+	private List<RuleCorrelationRequest> correlationRequests;
+	private List<RuleCorrelationResponse> correlationResponses;
+
 	/**
 	 * Field representing the number of messages sent to slaves.
 	 * Field is reset to zero after a batch task to slaves is completed
@@ -28,18 +28,27 @@ public class RulesController {
 	public RulesController(MasterController masterController) {
 		this.masterController = masterController;
 		ruleResponses = new ArrayList<>();
+		correlationResponses = new ArrayList<>();
 	}
 
 	public void batchStartRuleRequests(int threadCount, Map<String, ClientSocketHandler> clientSocketHandlers) {
+		batchStartRequests(ruleRequests, threadCount, clientSocketHandlers);
+	}
+
+	public void batchStartCorrelationRequests(int threadCount, Map<String, ClientSocketHandler> clientSocketHandlers) {
+		batchStartRequests(correlationRequests, threadCount, clientSocketHandlers);
+	}
+
+	private <T extends Message> void batchStartRequests(List<T> requests, int threadCount, Map<String, ClientSocketHandler> clientSocketHandlers) {
 		// Send all requests to different slaves
 		int threadIndex = 0;
 		sentMultithreadedMessagesCount = 0;
 		ArrayList<ClientSocketHandler> clientSocketHandlersArrList = new ArrayList<>(clientSocketHandlers.values());
 
-		while (threadIndex < threadCount && sentMultithreadedMessagesCount < ruleRequests.size()) {
+		while (threadIndex < threadCount && sentMultithreadedMessagesCount < requests.size()) {
 			ClientSocketHandler clientSocketHandler = clientSocketHandlersArrList.get(threadIndex);
 
-			clientSocketHandler.setNextMsgOut(ruleRequests.get(sentMultithreadedMessagesCount));
+			clientSocketHandler.setNextMsgOut(requests.get(sentMultithreadedMessagesCount));
 
 			sentMultithreadedMessagesCount++;
 			threadIndex++;
@@ -69,22 +78,22 @@ public class RulesController {
 	 */
 	ArrayList<RuleCorrelationRequest> createRuleCorrelationRequests() {
 		ArrayList<RuleCorrelationRequest> outputList = new ArrayList<RuleCorrelationRequest>();
-		for (int i = 1; i <= ruleResponses.size(); i++) {
-			for (int j = 0; j < ruleResponses.get(i).getRules().size(); j++) {
-				if (i + 1 <= ruleResponses.size()) {
-					ArrayList<Rule> ruleCorrelationArray = new ArrayList<>();
-					ruleCorrelationArray.add(ruleResponses.get(i).getRules().get(j));
-					outputList.add(new RuleCorrelationRequest("baseRule", ruleCorrelationArray));
-					for (int k = i + 1; k <= ruleResponses.size(); k++) {
-						ruleCorrelationArray = new ArrayList<>();
-						for (int l = 0; l < ruleResponses.get(k).getRules().size(); l++) {
-							ruleCorrelationArray.add(ruleResponses.get(k).getRules().get(l));
-						}
-						outputList.add(new RuleCorrelationRequest("rule", ruleCorrelationArray));
+
+		for (int i = 0; i < ruleResponses.size() - 1; i++) {
+			AssociationRuleResponse baseQuestion = ruleResponses.get(i);
+			for (Rule baseRule : baseQuestion.getRules()) {
+				ArrayList<Rule> otherRules = new ArrayList<>();
+				for (int j = i + 1; j < ruleResponses.size(); j++) {
+					AssociationRuleResponse question = ruleResponses.get(j);
+					for (Rule rule : question.getRules()) {
+						otherRules.add(rule);
+
 					}
 				}
+				outputList.add(new RuleCorrelationRequest(baseRule, otherRules));
 			}
 		}
+
 		return outputList;
 	}
 

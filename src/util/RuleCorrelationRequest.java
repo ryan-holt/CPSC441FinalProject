@@ -3,19 +3,19 @@ package util;
 import java.util.ArrayList;
 
 public class RuleCorrelationRequest {
-    private String ruleType;
-    private ArrayList<Rule> result;
+    private Rule baseRule;
+    private ArrayList<Rule> rules;
 
-    public RuleCorrelationRequest(String ruleType, ArrayList<Rule> result) {
-        this.ruleType = ruleType;
-        this.result = result;
+    public RuleCorrelationRequest(Rule baseRule, ArrayList<Rule> rules) {
+        this.baseRule = baseRule;
+        this.rules = rules;
     }
 
-    public ArrayList<Rule> getResult() {
-        return result;
+    public Rule getBaseRule() {
+    	return baseRule;
     }
 
-    public String getRuleType() {
-        return ruleType;
-    }
+	public ArrayList<Rule> getRules() {
+		return rules;
+	}
 }
