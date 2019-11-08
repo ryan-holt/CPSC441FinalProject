@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -33,10 +34,16 @@ public class MasterController implements MessageListener {
      */
     private ExecutorService pool;
 
+    /**
+     * File handler to manage file I/O.
+     */
+    private FileHandler fileHandler;
+
     public MasterController() {
         try {
             serverSocket = new ServerSocket(PORT);
             pool = Executors.newFixedThreadPool(10);
+            fileHandler = new FileHandler();
             System.out.println("Server is running");
             printIPInfo();
             System.out.println("********");
@@ -49,7 +56,7 @@ public class MasterController implements MessageListener {
     /**
      * Continously checks for new clients to add to the thread pool
      */
-    public void communicateWithClient() {
+    private void communicateWithClient() {
         try {
             while (true) {
 //                OLD_SocketHandler_again scc = new OLD_SocketHandler_again(serverSocket.accept(), this); // TODO delete
@@ -69,7 +76,7 @@ public class MasterController implements MessageListener {
     /**
      * Prints all the IP address information
      */
-    public void printIPInfo() {
+    private void printIPInfo() {
         InetAddress ip;
         try {
             ip = InetAddress.getLocalHost();
@@ -91,14 +98,18 @@ public class MasterController implements MessageListener {
 		    	msgOut.setAction("finishedSurvey");
 		    	break;
 		    case "calculateCorrelation":
-			    //Insert code to calculate correlations
+                //TODO Insert code to calculate correlations and remove test case below
+                msgOut = getHistoricalCalculationResponse("test.txt");
 			    break;
-		    case "listHistoricalCorrelation":
-			    //Insert code to do that
+		    case "listHistoricalCalculations":
+		        String HCList = fileHandler.getListOfHistoricalCorrelation();
+                System.out.println(HCList);
+                msgOut = new ListHistoricalCalculationsResponse(HCList);
 			    break;
-		    case "viewHistoricalCorrelation":
-			    //Insert code to do that
-			    break;
+		    case "viewHistoricalCalculation":
+		        String filename = ((ViewHistoricalCalculationRequest) msg).getCalculationFilename();
+		        msgOut = getHistoricalCalculationResponse(filename);
+                break;
 		    case "quit":
 			    msgOut.setAction("terminate");
 		    	break;
@@ -117,12 +128,21 @@ public class MasterController implements MessageListener {
 	    return msgOut;
     }
 
+    private Message getHistoricalCalculationResponse(String filename) {
+        try {
+            ArrayList<RulesCorrelation> correlations = fileHandler.getHistoricalCorrelations(filename);
+            return new CalculationResponse(correlations);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new Message("FileReadingError");
+        }
+    }
+
     private SurveyQuestions createSurveyQuestions() {
     	return new SurveyQuestions();
     }
 
     private void writeSurveyAnswerToFile(SurveyAnswer surveyAnswer) {
-	    FileHandler fileHandler = new FileHandler();
 	    try {
 		    fileHandler.writeArrayToFile(surveyAnswer.getAnswer());
 	    } catch (IOException e) {
