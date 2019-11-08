@@ -22,14 +22,39 @@ public class FileHandler {
     /**
      * Filepath for the text-based database
      */
+    private String configFilePath;
     private String surveyEntriesFilePath;
     private String historicalCorrelationsPath;
     DateTimeFormatter dtf;
     LocalDateTime now;
 
     public FileHandler() {
+        configFilePath = System.getProperty("user.dir") + File.separator + "config.txt";
         surveyEntriesFilePath = System.getProperty("user.dir") + File.separator + "SurveyEntries.txt";
         historicalCorrelationsPath = System.getProperty("user.dir") + File.separator + "HistoricalCorrelations";
+    }
+
+    public ArrayList<String> readIPsFromConfig() {
+        ArrayList<String> ips = new ArrayList<>();
+//        BufferedReader reader = null;
+        try (BufferedReader reader = new BufferedReader(new FileReader(configFilePath))) {
+            String line;
+            while((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (!line.startsWith("#") && !line.isEmpty()) {
+                    ips.add(line);
+                }
+            }
+            reader.close();
+        } catch (FileNotFoundException e) {
+            System.err.println("Error, could not find config.txt located at: " + configFilePath);
+            System.exit(-1);
+        } catch (IOException e) {
+            System.err.println("Error: master file reader threw IOException while trying to access config.txt");
+            System.exit(-1);
+        }
+
+        return ips;
     }
 
     /**
