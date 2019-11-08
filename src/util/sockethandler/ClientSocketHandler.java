@@ -1,5 +1,6 @@
 package util.sockethandler;
 
+import util.HostAddressMessage;
 import util.Message;
 import util.MessageListener;
 
@@ -12,6 +13,7 @@ import java.net.Socket;
  * independent thread.
  */
 public class ClientSocketHandler extends SocketHandler {
+	private String serverIp; // IP of the server side requested
 
 	private boolean loopCommunication;
 
@@ -25,6 +27,7 @@ public class ClientSocketHandler extends SocketHandler {
 	public ClientSocketHandler(Socket socket, MessageListener listener, boolean loopCommunication) {
 		super(socket, listener);
 		this.loopCommunication = loopCommunication;
+		serverIp = socket.getInetAddress().getHostAddress();
 	}
 
 	public Message getNextMsgOut() {
@@ -57,6 +60,9 @@ public class ClientSocketHandler extends SocketHandler {
 				stop();
 			}
 			Message msgIn = readMessage();
+			if (msgIn instanceof HostAddressMessage) {
+				((HostAddressMessage) msgIn).setHostIP(serverIp);
+			}
 			lastMsgIn = msgIn;
 			nextMsgOut = notifyListener(msgIn); // Let the listener handle the message but don't do anything with it
 

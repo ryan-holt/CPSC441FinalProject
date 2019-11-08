@@ -33,7 +33,7 @@ public class RulesController {
 
 		countKeywordEntries(groups, entries, keywordCounts, groupUsers);
 
-		Map<KeywordGroup, Rule> rules = calculateRulesScores((double) entries.size(), groups, keywordCounts, groupUsers);
+		LinkedHashMap<KeywordGroup, Rule> rules = calculateRulesScores((double) entries.size(), groups, keywordCounts, groupUsers);
 
 		return rules;
 	}
@@ -129,7 +129,8 @@ public class RulesController {
 		rules.clear();
 		rulesArr.stream()
 				.sorted((a, b) -> (int) (a.getValue().getScore() - b.getValue().getScore())) // Reverse sort
-				.forEachOrdered(e -> rules.put(e.getKey(), e.getValue())); // Store values back into rules
+//				.forEachOrdered(e -> rules.put(e.getKey(), e.getValue())); // Store values back into rules
+				.collect(Collectors.toList()); // Store values back into rules
 
 		return rules;
 	}

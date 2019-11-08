@@ -68,28 +68,6 @@ public class DummyClient {
 		}
 	}
 
-
-//	public ArrayList<SurveyEntry> getSurveyAnswer(SurveyQuestions incomingSurvey) throws IOException {
-//		ArrayList<String> surveyQuestionList = incomingSurvey.getSurveyQuestionList();
-//		ArrayList<ArrayList<String>> surveyAnswersLists = incomingSurvey.getSurveyAnswersLists();
-//		ArrayList<SurveyEntry> userAnswers = new ArrayList<SurveyEntry>();
-//		//ArrayList<String> allResponses = new ArrayList<String>();
-//		for (int i = 0; i < surveyQuestionList.size(); i++) {
-//			boolean invalidResponse = true;
-//			while (invalidResponse) {
-//				System.out.println(surveyQuestionList.get(i));
-//				ArrayList<String> currentQuestionResponses = new ArrayList<String>(Arrays.asList(inFromUser.readLine().split("\\s+")));
-//				if (!surveyAnswersLists.get(i).containsAll(currentQuestionResponses)) {
-//					System.out.println("Invalid response, please try again.");
-//					continue;
-//				}
-//				invalidResponse = false;
-//				userAnswers.add(new SurveyEntry(name, i+1, currentQuestionResponses));
-//			}
-//		}
-//		return userAnswers;
-//	}
-
 	private void writeObject(Object obj) throws IOException {
 		socketOut.writeObject(obj);
 		socketOut.reset();
