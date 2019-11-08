@@ -10,8 +10,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * This class is responsible for managing the thread pool as well as
@@ -44,11 +43,15 @@ public class MasterController implements MessageListener {
 
     private ServerSocketHandler serverSocketHandler;
     private LinkedHashMap<String, ClientSocketHandler> clientSocketHandlers;
+	/**
+	 * A list of future objects used to ensure full completion
+	 */
+	private Map<ClientSocketHandler, Future> clientFutures;
 
-    /**
-     * File handler to manage file I/O.
-     */
-    private FileHandler fileHandler;
+	/**
+	 * File handler to manage file I/O.
+	 */
+	private FileHandler fileHandler;
 
     public MasterController() {
         try {
@@ -76,6 +79,7 @@ public class MasterController implements MessageListener {
 	 */
 	private void initializeClientSocketHandlers() throws IOException {
 		clientSocketHandlers = new LinkedHashMap<>();
+		clientFutures = new HashMap<>();
 	    for (int i = 0; i < CLIENT_IPS.length; i++) {
 	    	String clientIP = CLIENT_IPS[i];
 	    	int clientPort = CLIENT_PORTS[i];
@@ -143,18 +147,18 @@ public class MasterController implements MessageListener {
 				}
 				msgOut = getHistoricalCalculationResponse("test.txt");
 			    break;
-			case "associationRulesResponse":
-				addRuleResponseAndSendNext((AssociationRuleResponse) msg);
-				break;
+		    case "associationRulesResponse":
+//		    	addRuleResponseAndSendNext((AssociationRuleResponse) msg); // TODO consider deleting - handle with futures instead
+		    	break;
 		    case "listHistoricalCalculations":
-		        String HCList = fileHandler.getListOfHistoricalCorrelation();
-                System.out.println(HCList);
-                msgOut = new ListHistoricalCalculationsResponse(HCList);
+			    String HCList = fileHandler.getListOfHistoricalCorrelation();
+			    System.out.println(HCList);
+			    msgOut = new ListHistoricalCalculationsResponse(HCList);
 			    break;
-		    case "viewHistoricalCalculation":
-		        String filename = ((ViewHistoricalCalculationRequest) msg).getCalculationFilename();
-		        msgOut = getHistoricalCalculationResponse(filename);
-                break;
+		    case "viewHistoricalCorrelation":
+			    String filename = ((ViewHistoricalCalculationRequest) msg).getCalculationFilename();
+			    msgOut = getHistoricalCalculationResponse(filename);
+			    break;
 		    case "quit":
 			    msgOut.setAction("terminate");
 		    	break;
@@ -195,6 +199,17 @@ public class MasterController implements MessageListener {
 	    	e.printStackTrace();
 	    }
     }
+
+	/**
+	 * Prepares the association rule request package to send to slave
+	 * @throws IOException
+	 */
+	public ArrayList<AssociationRuleRequest> prepareAssociationRuleRequests() {
+		ArrayList<SurveyEntry> entries = fileHandler.ReadFromFile();
+		HashMap<Integer,ArrayList<SurveyEntry>> entriesByQuestion = orderEntriesByQuestion(entries);
+		HashMap<Integer,ArrayList<KeywordGroup>> keywordsByQuestion = getKeywordGroupsByQuestion();
+		return createAssociationRuleRequests(entriesByQuestion, keywordsByQuestion);
+	}
 
 	/**
 	 * Order the survey entries by question into a hashmap
@@ -254,13 +269,6 @@ public class MasterController implements MessageListener {
 	}
 
 	/**
-	 * sends the association rule package to the slaves
-	 */
-	void sendRuleRequestsToSlaves() {
-		System.out.println("Sending rule requests to slaves.");
-	}
-
-	/**
 	 * Returns an arraylist of rule correlation requests
 	 * @param ruleResponses the rule responses
 	 * @return the arraylist of rule correlation requests
@@ -288,38 +296,22 @@ public class MasterController implements MessageListener {
 
     // TODO Assign return type message
     private synchronized void calculateCorrelation() {
-    	// TODO get the associationRulesRequests
-	    ArrayList<KeywordGroup> testKeywordGroup = new ArrayList<KeywordGroup>(Arrays.asList(
-			    new KeywordGroup("python", "java"),
-			    new KeywordGroup("c++", "python"),
-			    new KeywordGroup("java", "c++")
-	    ));
-
-	    ArrayList<SurveyEntry> testEntries = new ArrayList<SurveyEntry>(Arrays.asList(
-			    new SurveyEntry("Jim", 1, "python", "java", "c++"),
-			    new SurveyEntry("Bob", 1, "python", "java"),
-			    new SurveyEntry("Frank", 1, "python", "c++")
-	    ));
-
-	    AssociationRuleRequest testRequest = new AssociationRuleRequest(1, testKeywordGroup, testEntries);
-
-	    List<AssociationRuleRequest> requests = new ArrayList<>();
-	    requests.add(testRequest); // FIXME delete
-//	    requests.add(new AssociationRuleRequest(2, testKeywordGroup, testEntries)); // TODO Fix multithreading issues
+	    List<AssociationRuleRequest> requests = prepareAssociationRuleRequests();
 
 	    if (latch.getCount() != threadCount) {
 		    System.err.println("Error, expected latch to have count " + threadCount + " but count was only" + latch.getCount());
 		    System.exit(-1);
 	    }
-	    System.out.println("!!! latch is at: " + latch.getCount()); // FIXME delete
 
 	    rulesController.setRuleRequests(requests);
 
 		rulesController.batchStartRuleRequests(threadCount, clientSocketHandlers);
 
 	    for (ClientSocketHandler clientSocketHandler : clientSocketHandlers.values()) {
-	    	pool.execute(clientSocketHandler);
+	    	clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 	    }
+
+	    waitForSlaveExecution();
 
 	    try {
 		    latch.await();
@@ -327,21 +319,52 @@ public class MasterController implements MessageListener {
 		    e.printStackTrace();
 	    }
 
-
-	    System.out.println("!!! latch is no longer waiting!"); // FIXME delete
 	    rulesController.createRuleCorrelationRequests();
     }
 
-    private synchronized void addRuleResponseAndSendNext(AssociationRuleResponse response) {
-    	ClientSocketHandler nextSocketHandler = rulesController.addRuleResponse(response, clientSocketHandlers);
+    private synchronized void waitForSlaveExecution() {
+	    boolean isWaiting = true;
+	    Iterator<Map.Entry<ClientSocketHandler, Future>> iterator;
+	    while (isWaiting) {
+		    isWaiting = false;
+
+		    iterator = clientFutures.entrySet().iterator();
+		    while (iterator.hasNext()) {
+			    Map.Entry<ClientSocketHandler, Future> entry = iterator.next();
+			    ClientSocketHandler clientSocketHandler = entry.getKey();
+			    Future future = entry.getValue();
+
+			    try {
+				    future.get(100, TimeUnit.MILLISECONDS);
+			    } catch (InterruptedException e) {
+				    e.printStackTrace();
+			    } catch (ExecutionException e) {
+				    e.printStackTrace();
+			    } catch (TimeoutException e) {
+				    isWaiting = true;
+				    continue; // Not ready yet, go back to waiting...
+			    }
+
+			    iterator.remove(); // Done with this entry, remove
+
+			    // Recursive call
+			    addRuleResponseAndSendNext(clientSocketHandler, (AssociationRuleResponse) clientSocketHandler.getLastMsgIn());
+
+		    }
+	    }
+    }
+
+    private synchronized void addRuleResponseAndSendNext(ClientSocketHandler clientSocketHandler, AssociationRuleResponse response) {
+		clientSocketHandler = rulesController.addRuleResponse(response, clientSocketHandlers);
 
     	// If any other messages need to be sent...
-    	if (nextSocketHandler != null) {
-		    System.out.println("!!! clientSocketHandler at " + nextSocketHandler.getServerIp());
-		    pool.execute(nextSocketHandler);
+    	if (clientSocketHandler != null) {
+		    System.out.println("!!! clientSocketHandler at " + clientSocketHandler.getServerIp());
+		    clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
+
+		    waitForSlaveExecution();
 	    } else {
     		latchCountDown();
-		    System.out.println("!!! latch decremented to " + latch.getCount()); // FIXME delete
 	    }
     }
 

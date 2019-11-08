@@ -37,8 +37,6 @@ public class SlaveController implements MessageListener {
 				ServerSocketHandler serverSocketHandler = new ServerSocketHandler(serverSocket.accept(), this);
 				System.out.println("New Master Client Connected");
 				pool.execute(serverSocketHandler);
-
-//				serverSocketHandler.run(); // FIXME remove this multithreading stuff that we don't need
 			}
 		} catch (IOException e) {
 			System.err.println("SlaveController: CommunicateWithClient error");
