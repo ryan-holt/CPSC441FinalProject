@@ -130,8 +130,17 @@ public class MasterController implements MessageListener {
 		    	msgOut.setAction("finishedSurvey");
 		    	break;
 		    case "calculateCorrelation":
-				calculateCorrelation();
+				//calculateCorrelation();
+				//TODO Uncomment when we get correlations from calculateCorrelations -- this function works already =)
+				//writeCorrelationsToFile(correlations);
 				//TODO DUMMY OUTPUT to be deleted and replaced
+				msgOut = getHistoricalCalculationResponse("test.txt");
+				try {
+					fileHandler.writeArrayToFile(fileHandler.ReadFromFile());
+					fileHandler.writeCorrelationsToFile(((CalculationResponse) msgOut).getCorrelations());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 				msgOut = getHistoricalCalculationResponse("test.txt");
 			    break;
 			case "associationRulesResponse":
