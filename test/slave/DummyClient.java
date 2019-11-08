@@ -49,13 +49,17 @@ public class DummyClient {
 	}
 
 	public void communicateWithServer() throws IOException, ClassNotFoundException {
-		Message msgOut = new Message("test");
-		System.out.println("DummyClient: sending message test");
+		Message msgOut = new Message("calculateCorrelation");
+//		Message msgOut = SlaveControllerTest.makeTestAssociationRuleRequest();
+		System.out.println("DummyClient: sending message requestAssociationRules");
+
 
 		writeObject(msgOut);
 		System.out.println("DummyClient: waiting for response...");
 		Message msgIn = (Message) socketIn.readObject();
 		System.out.println("DummyClient: msgIn action is: " + msgIn.getAction());
+
+
 		msgOut.setAction("quit");
 		writeObject(msgOut);
 		msgIn = (Message) socketIn.readObject();
@@ -67,28 +71,6 @@ public class DummyClient {
 			socket.close();
 		}
 	}
-
-
-//	public ArrayList<SurveyEntry> getSurveyAnswer(SurveyQuestions incomingSurvey) throws IOException {
-//		ArrayList<String> surveyQuestionList = incomingSurvey.getSurveyQuestionList();
-//		ArrayList<ArrayList<String>> surveyAnswersLists = incomingSurvey.getSurveyAnswersLists();
-//		ArrayList<SurveyEntry> userAnswers = new ArrayList<SurveyEntry>();
-//		//ArrayList<String> allResponses = new ArrayList<String>();
-//		for (int i = 0; i < surveyQuestionList.size(); i++) {
-//			boolean invalidResponse = true;
-//			while (invalidResponse) {
-//				System.out.println(surveyQuestionList.get(i));
-//				ArrayList<String> currentQuestionResponses = new ArrayList<String>(Arrays.asList(inFromUser.readLine().split("\\s+")));
-//				if (!surveyAnswersLists.get(i).containsAll(currentQuestionResponses)) {
-//					System.out.println("Invalid response, please try again.");
-//					continue;
-//				}
-//				invalidResponse = false;
-//				userAnswers.add(new SurveyEntry(name, i+1, currentQuestionResponses));
-//			}
-//		}
-//		return userAnswers;
-//	}
 
 	private void writeObject(Object obj) throws IOException {
 		socketOut.writeObject(obj);

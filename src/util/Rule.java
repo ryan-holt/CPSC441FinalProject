@@ -1,5 +1,6 @@
 package util;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
@@ -9,7 +10,7 @@ import java.util.List;
  * score
  * users - the users who have selected the keywords in the keywordGroup
  */
-public class Rule {
+public class Rule implements Serializable {
 	private KeywordGroup keywordGroup;
 	private double score;
 	private List<String> users;

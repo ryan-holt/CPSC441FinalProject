@@ -47,17 +47,23 @@ public class SlaveController implements MessageListener {
 	}
 	
 	public Message handleMessage(Message msg) {
+		Message msgOut = null;
 		switch (msg.getAction()) {
 			case "requestAssociationRules":
-				rulesController.calculateAssociationRules((AssociationRuleRequest) msg);
+				System.out.println("!!! slave starting requestAssociationRules"); // FIXME delete
+				msgOut = rulesController.calculateAssociationRules((AssociationRuleRequest) msg);
 				break;
 			case "test": // FIXME delete
 				return new Message("slaveControllerTestResponse");
+			case "test2":
+				return new Message("slaveControllerTestResponse2");
 			default:
-				// TODO Throw exception
+				msgOut = new Message("terminate");
+				System.err.println("Error: Message with action " + msg.getAction() + " is not recognized");
+				break;
 		}
 
-		return null;
+		return msgOut;
 	}
 
 
