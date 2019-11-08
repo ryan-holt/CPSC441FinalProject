@@ -134,14 +134,10 @@ public class MasterController implements MessageListener {
 		    	msgOut.setAction("finishedSurvey");
 		    	break;
 		    case "calculateCorrelation":
-				calculateCorrelation();
-				//TODO Uncomment when we get correlations from calculateCorrelations -- this function works already =)
-				//fileHandler.writeCorrelationsToFile(correlations);
-				//TODO DUMMY OUTPUT to be deleted and replaced
-				msgOut = getHistoricalCalculationResponse("test.txt");
+				msgOut = calculateCorrelation(); // Run the really big calculation
 			    break;
 		    case "associationRulesResponse":
-//		    	addRuleResponseAndSendNext((AssociationRuleResponse) msg); // TODO clean out and delete, bypass error message - handle with futures instead
+				// TODO clean out and delete, bypass error message
 		    	break;
 		    case "ruleCorrelationResponse":
 		    	// TODO clean out and delete, bypass error message
@@ -270,7 +266,7 @@ public class MasterController implements MessageListener {
 	}
 
     // TODO Assign return type message
-    private synchronized void calculateCorrelation() {
+    private synchronized CalculationResponse calculateCorrelation() {
 	    List<AssociationRuleRequest> requests = prepareAssociationRuleRequests();
 
 	    if (latch.getCount() != threadCount) {
@@ -325,7 +321,9 @@ public class MasterController implements MessageListener {
 	    }
 
 	    List<RulesCorrelation> topCorrelations = rulesController.getTopCorrelations();
-	    System.out.println("!!! Done calculating correlations"); // FIXME delete
+	    fileHandler.writeCorrelationsToFile(topCorrelations);
+
+	    return createCalculationResponse(topCorrelations);
     }
 
     private synchronized void waitForSlaveRuleExecution() {
@@ -418,6 +416,10 @@ public class MasterController implements MessageListener {
 	    } else {
     		latchCountDown();
 	    }
+    }
+
+    private CalculationResponse createCalculationResponse(List<RulesCorrelation> correlations) {
+		return new CalculationResponse(correlations);
     }
 
     public static void main(String[] args) {

@@ -6,6 +6,7 @@ import util.sockethandler.ClientSocketHandler;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class is responsible for communicating with the server
@@ -145,7 +146,7 @@ public class AdminClientController implements MessageListener {
      *
      * @param correlations
      */
-    private void displayCorrelations(ArrayList<RulesCorrelation> correlations) {
+    private void displayCorrelations(List<RulesCorrelation> correlations) {
         for (RulesCorrelation correlation : correlations) {
             System.out.println(correlation);
         }
