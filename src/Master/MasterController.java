@@ -108,7 +108,7 @@ public class MasterController implements MessageListener {
         InetAddress ip;
         try {
             ip = InetAddress.getLocalHost();
-            System.out.println("You current IP address: " + ip);
+            System.out.println("Your current IP address: " + ip);
         } catch (UnknownHostException e) {
             System.out.println("IP Print error");
             e.printStackTrace();

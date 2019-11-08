@@ -33,8 +33,6 @@ abstract class SocketHandler implements Runnable {
 			this.socket = socket;
 			socketOut = new ObjectOutputStream(socket.getOutputStream());
 			socketIn = new ObjectInputStream(socket.getInputStream());
-
-			printIPInfo();
 		} catch (IOException e) {
 			System.out.println("ServerSocketHandler: Create socketOut/socketIn failed");
 			e.printStackTrace();
