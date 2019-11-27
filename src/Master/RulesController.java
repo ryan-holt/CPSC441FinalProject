@@ -32,23 +32,21 @@ public class RulesController {
 		correlationResponses = new ArrayList<>();
 	}
 
-	public void batchStartRuleRequests(int threadCount, Map<String, ClientSocketHandler> clientSocketHandlers) {
+	public void batchStartRuleRequests(int threadCount, List<ClientSocketHandler> clientSocketHandlers) {
 		batchStartRequests(ruleRequests, threadCount, clientSocketHandlers);
 	}
 
-	public void batchStartCorrelationRequests(int threadCount, Map<String, ClientSocketHandler> clientSocketHandlers) {
+	public void batchStartCorrelationRequests(int threadCount, List<ClientSocketHandler> clientSocketHandlers) {
 		batchStartRequests(correlationRequests, threadCount, clientSocketHandlers);
 	}
 
-	private <T extends Message> void batchStartRequests(List<T> requests, int threadCount, Map<String, ClientSocketHandler> clientSocketHandlers) {
+	private <T extends Message> void batchStartRequests(List<T> requests, int threadCount, List<ClientSocketHandler> clientSocketHandlers) {
 		// Send all requests to different slaves
 		int threadIndex = 0;
 		sentMultithreadedMessagesCount = 0;
-		ArrayList<ClientSocketHandler> clientSocketHandlersArrList = new ArrayList<>(clientSocketHandlers.values());
 
 		while (threadIndex < threadCount && sentMultithreadedMessagesCount < requests.size()) {
-			ClientSocketHandler clientSocketHandler = clientSocketHandlersArrList.get(threadIndex);
-
+			ClientSocketHandler clientSocketHandler = clientSocketHandlers.get(threadIndex); // TODO Optimize by using iterator
 			clientSocketHandler.setNextMsgOut(requests.get(sentMultithreadedMessagesCount));
 
 			sentMultithreadedMessagesCount++;
@@ -56,42 +54,28 @@ public class RulesController {
 		}
 	}
 
-	public ClientSocketHandler addRuleResponse(AssociationRuleResponse ruleResponse, Map<String, ClientSocketHandler> clientSocketHandlers) {
-//		// TODO delete
-//		addToSharedList(ruleResponses, ruleResponse);
-//
-//		// Check if any other messages need to be sent still
-//		if (sentMultithreadedMessagesCount < ruleRequests.size()) {
-//			ClientSocketHandler clientSocketHandler = clientSocketHandlers.get(ruleResponse.getHostIP());
-//			clientSocketHandler.setNextMsgOut(ruleRequests.get(sentMultithreadedMessagesCount));
-//			sentMultithreadedMessagesCount++;
-//
-//			return clientSocketHandler;
-//		}
-//
-//		return null;
-
-		return addResponse(ruleRequests, ruleResponses, ruleResponse, clientSocketHandlers);
+	public boolean addRuleResponse(AssociationRuleResponse ruleResponse, ClientSocketHandler clientSocketHandler) {
+		return addResponse(ruleRequests, ruleResponses, ruleResponse, clientSocketHandler);
 	}
 
-	public ClientSocketHandler addCorrelationResponse(RuleCorrelationResponse correlationResponse, Map<String, ClientSocketHandler> clientSocketHandlers) {
-		return addResponse(correlationRequests, correlationResponses, correlationResponse, clientSocketHandlers);
+	public boolean addCorrelationResponse(RuleCorrelationResponse correlationResponse, ClientSocketHandler clientSocketHandler) {
+		return addResponse(correlationRequests, correlationResponses, correlationResponse, clientSocketHandler);
 	}
 
 	private <T extends Message, S extends HostAddressMessage>
-	ClientSocketHandler addResponse(List<T> requests, List<S> responses, S response, Map<String, ClientSocketHandler> clientSocketHandlers) {
+	boolean addResponse(List<T> requests, List<S> responses, S response, ClientSocketHandler clientSocketHandler) {
+
 		addToSharedList(responses, response);
 
 		// Check if any other messages need to be sent still
 		if (sentMultithreadedMessagesCount < requests.size()) {
-			ClientSocketHandler clientSocketHandler = clientSocketHandlers.get(response.getHostIP());
 			clientSocketHandler.setNextMsgOut(requests.get(sentMultithreadedMessagesCount));
 			sentMultithreadedMessagesCount++;
 
-			return clientSocketHandler;
+			return true;
 		}
 
-		return null;
+		return false;
 	}
 
 	/**
@@ -110,7 +94,6 @@ public class RulesController {
 					AssociationRuleResponse question = ruleResponses.get(j);
 					for (Rule rule : question.getRules()) {
 						otherRules.add(rule);
-
 					}
 				}
 				outputList.add(new RuleCorrelationRequest(baseRule, otherRules));

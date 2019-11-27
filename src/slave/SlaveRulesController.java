@@ -170,7 +170,7 @@ public class SlaveRulesController {
 					unionCount++;
 					i++;
 					j++;
-				} else if (comparison > 0) {
+				} else if (comparison < 0) {
 					unionCount++;
 					i++;
 				} else {
@@ -178,6 +178,9 @@ public class SlaveRulesController {
 					j++;
 				}
 			}
+
+			unionCount += baseUsers.size() - i;
+			unionCount += users.size() - j;
 
 			if (unionCount == 0 || intersectCount == 0) {
 				continue;

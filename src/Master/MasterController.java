@@ -25,7 +25,8 @@ public class MasterController implements MessageListener {
      */
     private static final int SERVER_PORT = 9000;
     private int threadCount;
-    private final String[] CLIENT_IPS = {"127.0.0.1"};
+//    private final String[] CLIENT_IPS = {"127.0.0.1"};
+    private ArrayList<String> CLIENT_IPS;
     private final int[] CLIENT_PORTS = {9001};
 
     private RulesController rulesController;
@@ -42,7 +43,7 @@ public class MasterController implements MessageListener {
     private ResettableCountDownLatch latch;
 
     private ServerSocketHandler serverSocketHandler;
-    private LinkedHashMap<String, ClientSocketHandler> clientSocketHandlers;
+    private ArrayList<ClientSocketHandler> clientSocketHandlers;
 	/**
 	 * A list of future objects used to ensure full completion
 	 */
@@ -55,15 +56,17 @@ public class MasterController implements MessageListener {
 
     public MasterController() {
         try {
+			fileHandler = new FileHandler();
+			CLIENT_IPS = fileHandler.readIPsFromConfig();
+
 			initializeClientSocketHandlers();
 
             serverSocket = new ServerSocket(SERVER_PORT);
-            threadCount = CLIENT_IPS.length;
-            pool = Executors.newFixedThreadPool(5);
+            threadCount = CLIENT_IPS.size();
+            pool = Executors.newFixedThreadPool(threadCount + 3);
             latch = new ResettableCountDownLatch(threadCount);
-			fileHandler = new FileHandler();
             System.out.println("Server is running");
-            printIPInfo();
+//            printIPInfo();
             System.out.println("********");
         } catch (IOException e) {
             System.out.println("ServerController: Create a new socket error");
@@ -78,12 +81,12 @@ public class MasterController implements MessageListener {
 	 * @throws IOException
 	 */
 	private void initializeClientSocketHandlers() throws IOException {
-		clientSocketHandlers = new LinkedHashMap<>();
+		clientSocketHandlers = new ArrayList<>();
 		clientFutures = new HashMap<>();
-	    for (int i = 0; i < CLIENT_IPS.length; i++) {
-	    	String clientIP = CLIENT_IPS[i];
+	    for (int i = 0; i < CLIENT_IPS.size(); i++) {
+	    	String clientIP = CLIENT_IPS.get(i);
 	    	int clientPort = CLIENT_PORTS[i];
-		    clientSocketHandlers.put(clientIP, new ClientSocketHandler(new Socket(clientIP, clientPort), this));
+		    clientSocketHandlers.add(new ClientSocketHandler(new Socket(clientIP, clientPort), this));
 	    }
     }
 
@@ -286,7 +289,7 @@ public class MasterController implements MessageListener {
 		rulesController.batchStartRuleRequests(threadCount, clientSocketHandlers);
 
 		// Record slave tasks as futures
-	    for (ClientSocketHandler clientSocketHandler : clientSocketHandlers.values()) {
+	    for (ClientSocketHandler clientSocketHandler : clientSocketHandlers) {
 	    	clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 	    }
 
@@ -309,7 +312,7 @@ public class MasterController implements MessageListener {
 
 	    rulesController.batchStartCorrelationRequests(threadCount, clientSocketHandlers);
 
-	    for (ClientSocketHandler clientSocketHandler : clientSocketHandlers.values()) {
+	    for (ClientSocketHandler clientSocketHandler : clientSocketHandlers) {
 		    clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 	    }
 
@@ -392,10 +395,8 @@ public class MasterController implements MessageListener {
 	}
 
 	private synchronized void addRuleResponseAndSendNext(ClientSocketHandler clientSocketHandler, AssociationRuleResponse response) {
-		clientSocketHandler = rulesController.addRuleResponse(response, clientSocketHandlers);
-
 		// If any other messages need to be sent...
-		if (clientSocketHandler != null) {
+		if (rulesController.addRuleResponse(response, clientSocketHandler)) {
 			clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 
 			waitForSlaveRuleExecution();
@@ -406,10 +407,8 @@ public class MasterController implements MessageListener {
 
 	// TODO Merge with addRuleResponseAndSendNext
     private synchronized void addCorrelationResponseAndSendNext(ClientSocketHandler clientSocketHandler, RuleCorrelationResponse response) {
-		clientSocketHandler = rulesController.addCorrelationResponse(response, clientSocketHandlers);
-
     	// If any other messages need to be sent...
-    	if (clientSocketHandler != null) {
+    	if (rulesController.addCorrelationResponse(response, clientSocketHandler)) {
 		    clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 
 		    waitForSlaveCorrelationExecution();
