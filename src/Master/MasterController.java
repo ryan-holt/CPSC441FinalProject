@@ -143,7 +143,6 @@ public class MasterController implements MessageListener {
     public Message handleMessage(Message msg) {
 		startTime = System.nanoTime();
     	Message msgOut = new Message("");
-    	System.out.println("Got to switch!");
 	    switch (msg.getAction()) {
 		    case "requestSurvey":
 				msgOut = createSurveyQuestions();
@@ -157,17 +156,13 @@ public class MasterController implements MessageListener {
 			    break;
 		    case "associationRulesResponse":
 				masterPart1Time = System.nanoTime() - masterPart1StartTime;
-				System.out.println(masterPart1Time);
 				slavePart1Time = msg.getElapsedTime();
-				System.out.println(slavePart1Time);
 
 				// TODO clean out and delete, bypass error message
 		    	break;
 		    case "ruleCorrelationResponse":
 		    	masterPart2Time = System.nanoTime() - masterPart2StartTime;
-				System.out.println(masterPart2Time);
 				slavePart2Time = msg.getElapsedTime();
-				System.out.println(slavePart2Time);
 		    	// TODO clean out and delete, bypass error message
 		    	break;
 		    case "listHistoricalCalculations":

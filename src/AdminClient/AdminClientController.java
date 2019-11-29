@@ -189,13 +189,27 @@ public class AdminClientController implements MessageListener {
     }
 
     /**
+     * Connect to localhost of no input. Connect to IP if user enters it
+     * @param args command line arguments
+     * @return IP string
+     */
+    public static String getDesiredIP(String[] args) {
+        if(args.length < 1) {
+            System.out.println("Returning localhost...");
+            return "localhost";
+        }
+        System.out.println("Returning your IP...");
+        return args[0];
+    }
+
+    /**
      * Runs the admin client side.
      *
      * @param args command line arguments
      * @throws ClassNotFoundException
      */
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        AdminClientController cc = new AdminClientController("10.13.77.154", 9000);
+        AdminClientController cc = new AdminClientController(getDesiredIP(args), 9000);
         cc.communicateWithServer();
     }
 }
