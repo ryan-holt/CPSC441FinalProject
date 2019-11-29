@@ -61,7 +61,9 @@ public class AdminClientController implements MessageListener {
         switch (msg.getAction()) {
             case "sendCalculationResponse":
                 CalculationResponse CR = (CalculationResponse) msg;
+                endTime = System.currentTimeMillis();
                 displayCorrelations(CR);
+                displayTimingInfo(CR);
                 msgOut = getMessageFromAdminInput();
                 break;
             case "sendHistoricalCalculationResponse":
@@ -128,9 +130,9 @@ public class AdminClientController implements MessageListener {
                             msgOut = new Message("listHistoricalCalculations");
                             break;
                         case "get": case "3":
-                            startTime = System.currentTimeMillis();
                             System.out.println("Please enter the filename of a previous calculation:");
                             msgOut = new ViewHistoricalCalculationRequest(inFromUser.readLine());
+                            startTime = System.currentTimeMillis();
                             break;
                         case "quit": case "4":
                             msgOut.setAction("quit");
@@ -188,7 +190,7 @@ public class AdminClientController implements MessageListener {
         }
         System.out.println("\nCalculation elapsed time: " + formatMilliTime(elapsedTime));
 
-        if(calcResponse.getMasterPart1Time() != 0) {
+        if (calcResponse.getMasterPart1Time() != 0) {
             System.out.println("Master Part 1 elapsed time: " + formatMilliTime(calcResponse.getMasterPart1Time()));
             System.out.println("Master Part 2 elapsed time: " + formatMilliTime(calcResponse.getMasterPart2Time()));
             System.out.println("Slave Part 1 elapsed time: " + formatMilliTime(calcResponse.getSlavePart1Time()));
