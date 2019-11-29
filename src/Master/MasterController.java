@@ -207,7 +207,7 @@ public class MasterController implements MessageListener {
 			e.printStackTrace();
 		}
 		HashMap<Integer,ArrayList<SurveyEntry>> entriesByQuestion = orderEntriesByQuestion(entries);
-		HashMap<Integer,ArrayList<KeywordGroup>> keywordsByQuestion = getKeywordGroupsByQuestion(3);
+		HashMap<Integer,ArrayList<KeywordGroup>> keywordsByQuestion = getKeywordGroupsByQuestion(keywordGroupSize);
 		return createAssociationRuleRequests(entriesByQuestion, keywordsByQuestion);
 	}
 
