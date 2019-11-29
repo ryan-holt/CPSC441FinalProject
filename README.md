@@ -20,8 +20,8 @@ To run the project on the Cybera RAC:
 7. A survey will appear. You may select more than one answer for each question (and are encouraged to do so). Please enter the the survey answers, delimited by a space. For example, enter `Python Java` to select the choices Python and Java respectively. 
 8. To run the admin, run the JAR `CPSC441-FinalProjectAdmin.jar`
   * java -jar CPSC441-FinalProjectAdmin\.jar
-9. The admin has several options. Type `help` to view all options. Type `calculate` to begin the correlation algorithm.
+9. The admin has several options. Type `help` to view all options. Type `calculate` to begin the correlation algorithm. Please be advised that the admin can specify either they want correlation scores for 2-tuples or 3-tuples, by entering the number of tuples they want by entering a space after 'calculate' followed by the number. For instance, if you want calculations for 3-tuples, you would enter 'calculate 3'.
 
-NOTE: This project currently only supports all applications running on `localhost`, though it can be expanded to operate on different machines.
+NOTE: You can specify the IP address of the server can connect to by entering it into the command line arguments. If not argument is entered, "localhost" is chosen by default.
 
 For extra documenation you may view our github page at: https://github.com/ryan-holt/CPSC441FinalProject
