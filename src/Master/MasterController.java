@@ -137,7 +137,7 @@ public class MasterController implements MessageListener {
 		    	msgOut.setAction("finishedSurvey");
 		    	break;
 		    case "calculateCorrelation":
-				msgOut = calculateCorrelation(); // Run the really big calculation
+				msgOut = calculateCorrelation((CalculationRequest) msg); // Run the really big calculation
 			    break;
 		    case "associationRulesResponse":
 				// TODO clean out and delete, bypass error message
@@ -199,7 +199,7 @@ public class MasterController implements MessageListener {
 	 * Prepares the association rule request package to send to slave
 	 * @throws IOException
 	 */
-	public ArrayList<AssociationRuleRequest> prepareAssociationRuleRequests() {
+	public ArrayList<AssociationRuleRequest> prepareAssociationRuleRequests(int keywordGroupSize) {
 		ArrayList<SurveyEntry> entries = null;
 		try {
 			entries = fileHandler.ReadFromFile();
@@ -246,7 +246,6 @@ public class MasterController implements MessageListener {
 	}
 
 	void calculateKeywordGroups(ArrayList<KeywordGroup> allGroups, ArrayList<String> groupedKeywords, ArrayList<String> allKeywords, int keywordIndex, int groupSize) {
-		System.out.println("!!! a");
 		for (int i = keywordIndex; i < allKeywords.size(); i++) {
 			ArrayList<String> keywordsCopy = new ArrayList<>(groupedKeywords);
 			keywordsCopy.add(allKeywords.get(i));
@@ -274,8 +273,8 @@ public class MasterController implements MessageListener {
 	}
 
     // TODO Assign return type message
-    private synchronized CalculationResponse calculateCorrelation() {
-	    List<AssociationRuleRequest> requests = prepareAssociationRuleRequests();
+    private synchronized CalculationResponse calculateCorrelation(CalculationRequest request) {
+	    List<AssociationRuleRequest> requests = prepareAssociationRuleRequests(request.getKeywordGroupSize());
 
 	    clientFutures.clear();
 	    // Custom reset function to make latch re-usable
