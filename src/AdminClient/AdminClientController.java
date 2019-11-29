@@ -167,13 +167,16 @@ public class AdminClientController implements MessageListener {
             System.out.println(correlation);
         }
         System.out.println("Calculation elapsed time: " + (elapsedTime));
-        System.out.println("Master Part 1 elapsed time: " + historicalCR.getMasterPart1Time());
-        System.out.println("Master Part 2 elapsed time: " + historicalCR.getMasterPart2Time());
-        System.out.println("Slave Part 1 elapsed time: " + historicalCR.getSlavePart1Time());
-        System.out.println("Slave Part 2 elapsed time: " + historicalCR.getSlavePart2Time());
 
-        System.out.println("The file transfer between Master and Slave (Part 1) is: " + (historicalCR.getMasterPart1Time() - historicalCR.getSlavePart1Time()));
-        System.out.println("The file transfer between Master and Slave (Part 2) is: " + (historicalCR.getMasterPart2Time() - historicalCR.getSlavePart2Time()));
+        if(historicalCR.getMasterPart1Time() != 0) {
+            System.out.println("Master Part 1 elapsed time: " + historicalCR.getMasterPart1Time());
+            System.out.println("Master Part 2 elapsed time: " + historicalCR.getMasterPart2Time());
+            System.out.println("Slave Part 1 elapsed time: " + historicalCR.getSlavePart1Time());
+            System.out.println("Slave Part 2 elapsed time: " + historicalCR.getSlavePart2Time());
+
+            System.out.println("The file transfer time between Master and Slave (Part 1) is: " + (historicalCR.getMasterPart1Time() - historicalCR.getSlavePart1Time()));
+            System.out.println("The file transfer time between Master and Slave (Part 2) is: " + (historicalCR.getMasterPart2Time() - historicalCR.getSlavePart2Time()));
+        }
     }
 
     private void displayTimingInfo(Message msg) {
