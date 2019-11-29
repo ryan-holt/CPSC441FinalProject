@@ -141,7 +141,7 @@ public class MasterController implements MessageListener {
     }
 
     public Message handleMessage(Message msg) {
-		startTime = System.nanoTime();
+
     	Message msgOut = new Message("");
 	    switch (msg.getAction()) {
 		    case "requestSurvey":
@@ -155,15 +155,10 @@ public class MasterController implements MessageListener {
 				msgOut = calculateCorrelation((CalculationRequest) msg); // Run the really big calculation
 			    break;
 		    case "associationRulesResponse":
-				masterPart1Time = System.nanoTime() - masterPart1StartTime;
-				slavePart1Time = msg.getElapsedTime();
-
-				// TODO clean out and delete, bypass error message
+				slavePart1Time += msg.getElapsedTime();
 		    	break;
 		    case "ruleCorrelationResponse":
-		    	masterPart2Time = System.nanoTime() - masterPart2StartTime;
-				slavePart2Time = msg.getElapsedTime();
-		    	// TODO clean out and delete, bypass error message
+				slavePart2Time += msg.getElapsedTime();
 		    	break;
 		    case "listHistoricalCalculations":
 			    String HCList = fileHandler.getListOfHistoricalCorrelation();
@@ -188,8 +183,8 @@ public class MasterController implements MessageListener {
 			    msgOut.setAction("terminate");
 			    break;
 	    }
-		endTime = System.nanoTime();
-	    msgOut.setElapsedTime(endTime-startTime);
+//		endTime = System.currentTimeMillis();
+//	    msgOut.setElapsedTime(endTime-startTime);
 	    return msgOut;
     }
 
@@ -295,7 +290,9 @@ public class MasterController implements MessageListener {
 
     // TODO Assign return type message
     private synchronized CalculationResponse calculateCorrelation(CalculationRequest request) {
-	    List<AssociationRuleRequest> requests = prepareAssociationRuleRequests(request.getKeywordGroupSize());
+	    startTime = System.currentTimeMillis();
+
+		List<AssociationRuleRequest> requests = prepareAssociationRuleRequests(request.getKeywordGroupSize());
 
 	    clientFutures.clear();
 	    // Custom reset function to make latch re-usable
@@ -306,6 +303,9 @@ public class MasterController implements MessageListener {
 		    System.exit(-1);
 	    }
 
+	    slavePart1Time = 0;
+	    slavePart2Time = 0;
+
 	    // Clean off old instances before starting anything.
 	    rulesController.clearRuleResponses();
 	    rulesController.clearCorrelationResponses();
@@ -315,6 +315,7 @@ public class MasterController implements MessageListener {
 	    // Send first tasks to slaves
 		rulesController.batchStartRuleRequests(threadCount, clientSocketHandlers);
 
+	    masterPart1StartTime = System.currentTimeMillis();
 		// Record slave tasks as futures
 	    for (ClientSocketHandler clientSocketHandler : clientSocketHandlers) {
 	    	clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
@@ -329,6 +330,7 @@ public class MasterController implements MessageListener {
 	    } catch (InterruptedException e) {
 		    e.printStackTrace();
 	    }
+		masterPart1Time = System.currentTimeMillis() - masterPart1StartTime;
 
 	    clientFutures.clear();
 	    // Custom reset function to make latch re-usable
@@ -339,6 +341,7 @@ public class MasterController implements MessageListener {
 
 	    rulesController.batchStartCorrelationRequests(threadCount, clientSocketHandlers);
 
+	    masterPart2StartTime = System.currentTimeMillis();
 	    for (ClientSocketHandler clientSocketHandler : clientSocketHandlers) {
 		    clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 	    }
@@ -352,10 +355,15 @@ public class MasterController implements MessageListener {
 		    e.printStackTrace();
 	    }
 
+	    masterPart2Time = System.currentTimeMillis() - masterPart2StartTime;
+
 	    List<RulesCorrelation> topCorrelations = rulesController.getTopCorrelations();
 	    fileHandler.writeCorrelationsToFile(topCorrelations);
 
-	    return createCalculationResponse(topCorrelations);
+	    CalculationResponse output = createCalculationResponse(topCorrelations);
+	    endTime = System.currentTimeMillis();
+	    output.setElapsedTime(endTime - startTime);
+	    return output;
     }
 
     private synchronized void waitForSlaveRuleExecution() {
@@ -371,7 +379,7 @@ public class MasterController implements MessageListener {
 			    Future future = entry.getValue();
 
 			    try {
-				    future.get(100, TimeUnit.MILLISECONDS);
+				    future.get(10, TimeUnit.MILLISECONDS);
 			    } catch (InterruptedException e) {
 				    e.printStackTrace();
 			    } catch (ExecutionException e) {
@@ -403,7 +411,7 @@ public class MasterController implements MessageListener {
 				Future future = entry.getValue();
 
 				try {
-					future.get(100, TimeUnit.MILLISECONDS);
+					future.get(10, TimeUnit.MILLISECONDS);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				} catch (ExecutionException e) {
@@ -424,7 +432,6 @@ public class MasterController implements MessageListener {
 	private synchronized void addRuleResponseAndSendNext(ClientSocketHandler clientSocketHandler, AssociationRuleResponse response) {
 		// If any other messages need to be sent...
 		if (rulesController.addRuleResponse(response, clientSocketHandler)) {
-			masterPart1StartTime =  System.nanoTime();
 			clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 			waitForSlaveRuleExecution();
 		} else {
@@ -436,7 +443,6 @@ public class MasterController implements MessageListener {
     private synchronized void addCorrelationResponseAndSendNext(ClientSocketHandler clientSocketHandler, RuleCorrelationResponse response) {
     	// If any other messages need to be sent...
     	if (rulesController.addCorrelationResponse(response, clientSocketHandler)) {
-		    masterPart2StartTime = System.nanoTime();
     		clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 		    waitForSlaveCorrelationExecution();
 	    } else {

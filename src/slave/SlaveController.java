@@ -49,7 +49,7 @@ public class SlaveController implements MessageListener {
 	
 	public Message handleMessage(Message msg) {
 		Message msgOut = null;
-		startTime = System.nanoTime();
+		startTime = System.currentTimeMillis();
 		switch (msg.getAction()) {
 			case "requestAssociationRules":
 				msgOut = rulesController.calculateAssociationRules((AssociationRuleRequest) msg);
@@ -64,8 +64,8 @@ public class SlaveController implements MessageListener {
 				System.err.println("Error: Message with action " + msg.getAction() + " is not recognized");
 				break;
 		}
-		endTime = System.nanoTime();
-		msgOut.setElapsedTime(endTime-startTime);
+		endTime = System.currentTimeMillis();
+		msgOut.setElapsedTime(endTime - startTime);
 		return msgOut;
 	}
 

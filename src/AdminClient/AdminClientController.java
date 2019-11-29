@@ -5,7 +5,6 @@ import util.sockethandler.ClientSocketHandler;
 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -67,7 +66,7 @@ public class AdminClientController implements MessageListener {
                 break;
             case "sendHistoricalCalculationResponse":
                 ListHistoricalCalculationsResponse HCR = (ListHistoricalCalculationsResponse) msg;
-                endTime = System.nanoTime();
+                endTime = System.currentTimeMillis();
                 System.out.println(HCR.getListOfHistoricalCalculations());
 
                 displayTimingInfo(HCR);
@@ -120,15 +119,15 @@ public class AdminClientController implements MessageListener {
                             invalidResponse = true;
                             break;
                         case "calculate": case "1":
-                            startTime = System.nanoTime();
+                            startTime = System.currentTimeMillis();
                             msgOut = createCalculationReqeust(inputArgs);
                             break;
                         case "list": case "2":
-                            startTime = System.nanoTime();
+                            startTime = System.currentTimeMillis();
                             msgOut = new Message("listHistoricalCalculations");
                             break;
                         case "get": case "3":
-                            startTime = System.nanoTime();
+                            startTime = System.currentTimeMillis();
                             System.out.println("Please enter the filename of a previous calculation:");
                             msgOut = new ViewHistoricalCalculationRequest(inFromUser.readLine());
                             break;
@@ -180,22 +179,22 @@ public class AdminClientController implements MessageListener {
      * Display all correlations.
      *
      */
-    private void displayCorrelations(CalculationResponse historicalCR) {
-        List<RulesCorrelation> correlations = historicalCR.getCorrelations();
-        long elapsedTime = historicalCR.getElapsedTime();
+    private void displayCorrelations(CalculationResponse calcResponse) {
+        List<RulesCorrelation> correlations = calcResponse.getCorrelations();
+        long elapsedTime = calcResponse.getElapsedTime();
         for (RulesCorrelation correlation : correlations) {
             System.out.println(correlation);
         }
-        System.out.println("Calculation elapsed time: " + (elapsedTime));
+        System.out.println("\nCalculation elapsed time: " + formatMilliTime(elapsedTime));
 
-        if(historicalCR.getMasterPart1Time() != 0) {
-            System.out.println("Master Part 1 elapsed time: " + historicalCR.getMasterPart1Time());
-            System.out.println("Master Part 2 elapsed time: " + historicalCR.getMasterPart2Time());
-            System.out.println("Slave Part 1 elapsed time: " + historicalCR.getSlavePart1Time());
-            System.out.println("Slave Part 2 elapsed time: " + historicalCR.getSlavePart2Time());
+        if(calcResponse.getMasterPart1Time() != 0) {
+            System.out.println("Master Part 1 elapsed time: " + formatMilliTime(calcResponse.getMasterPart1Time()));
+            System.out.println("Master Part 2 elapsed time: " + formatMilliTime(calcResponse.getMasterPart2Time()));
+            System.out.println("Slave Part 1 elapsed time: " + formatMilliTime(calcResponse.getSlavePart1Time()));
+            System.out.println("Slave Part 2 elapsed time: " + formatMilliTime(calcResponse.getSlavePart2Time()));
 
-            System.out.println("The file transfer time between Master and Slave (Part 1) is: " + (historicalCR.getMasterPart1Time() - historicalCR.getSlavePart1Time()));
-            System.out.println("The file transfer time between Master and Slave (Part 2) is: " + (historicalCR.getMasterPart2Time() - historicalCR.getSlavePart2Time()));
+            System.out.println("The file transfer time between Master and Slave (Part 1) is: " + formatMilliTime(calcResponse.getMasterPart1Time() - calcResponse.getSlavePart1Time()));
+            System.out.println("The file transfer time between Master and Slave (Part 2) is: " + formatMilliTime(calcResponse.getMasterPart2Time() - calcResponse.getSlavePart2Time()));
         }
     }
 
@@ -203,9 +202,13 @@ public class AdminClientController implements MessageListener {
         long adminElapsedTime = endTime - startTime;
         long masterElapsedTime = msg.getElapsedTime();
 
-        System.out.println("The admin elapsed time is: " + (adminElapsedTime));
-        System.out.println("The master elapsed time is: " + masterElapsedTime);
-        System.out.println("The file transfer time from admin to network is: " + (adminElapsedTime - masterElapsedTime));
+        System.out.println("The admin elapsed time is: " + formatMilliTime(adminElapsedTime));
+        System.out.println("The master elapsed time is: " + formatMilliTime(masterElapsedTime));
+        System.out.println("The file transfer time from admin to network is: " + formatMilliTime(adminElapsedTime - masterElapsedTime));
+    }
+
+    private String formatMilliTime(long milliTime) {
+        return String.format("%,.3f ms", (double) milliTime);
     }
 
     /**
