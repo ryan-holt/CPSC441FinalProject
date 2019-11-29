@@ -43,6 +43,20 @@ public class ClientController implements MessageListener {
 
     }
 
+	/**
+	 * Connect to localhost of no input. Connect to IP if user enters it
+	 * @param args command line arguments
+	 * @return IP string
+	 */
+	public static String getDesiredIP(String[] args) {
+		if(args.length < 1) {
+			System.out.println("Returning localhost...");
+			return "localhost";
+		}
+		System.out.println("Returning your IP...");
+		return args[0];
+	}
+
     /**
      * runs the client side
      *
@@ -50,7 +64,7 @@ public class ClientController implements MessageListener {
      * @throws ClassNotFoundException
      */
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        ClientController cc = new ClientController("localhost", 9000);
+        ClientController cc = new ClientController(getDesiredIP(args), 9000);
         cc.communicateWithServer();
     }
 
