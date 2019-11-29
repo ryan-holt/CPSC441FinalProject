@@ -76,6 +76,7 @@ public class AdminClientController implements MessageListener {
             case "viewHistoricalCalculation":
                 CalculationResponse historicalCR = (CalculationResponse) msg;
                 displayCorrelations(historicalCR);
+                displayTimingInfo(msg);
                 msgOut = getMessageFromAdminInput();
 
                 break;

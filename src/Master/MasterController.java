@@ -65,7 +65,6 @@ public class MasterController implements MessageListener {
 	private long masterPart2Time;
 
 	private long slavePart1Time;
-
 	private long slavePart2Time;
 
     public MasterController() {
@@ -161,13 +160,17 @@ public class MasterController implements MessageListener {
 				slavePart2Time += msg.getElapsedTime();
 		    	break;
 		    case "listHistoricalCalculations":
+		    	startTime = System.currentTimeMillis();
 			    String HCList = fileHandler.getListOfHistoricalCorrelation();
 			    System.out.println(HCList);
 			    msgOut = new ListHistoricalCalculationsResponse(HCList);
+			    msgOut.setElapsedTime(System.currentTimeMillis() - startTime);
 			    break;
 		    case "viewHistoricalCalculation":
+			    startTime = System.currentTimeMillis();
 			    String filename = ((ViewHistoricalCalculationRequest) msg).getCalculationFilename();
 			    msgOut = getHistoricalCalculationResponse(filename);
+			    msgOut.setElapsedTime(System.currentTimeMillis() - startTime);
 			    break;
 		    case "quit":
 			    msgOut.setAction("terminate");
@@ -393,7 +396,6 @@ public class MasterController implements MessageListener {
 
 			    // Recursive call
 			    addRuleResponseAndSendNext(clientSocketHandler, (AssociationRuleResponse) clientSocketHandler.getLastMsgIn());
-
 		    }
 	    }
     }
