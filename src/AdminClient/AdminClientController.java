@@ -23,6 +23,10 @@ public class AdminClientController implements MessageListener {
      */
     BufferedReader inFromUser;
 
+    private long startTime;
+
+    private long endTime;
+
     private ClientSocketHandler clientSocketHandler;
 
     /**
@@ -58,18 +62,23 @@ public class AdminClientController implements MessageListener {
         switch (msg.getAction()) {
             case "sendCalculationResponse":
                 CalculationResponse CR = (CalculationResponse) msg;
-                displayCorrelations(CR.getCorrelations());
+                displayCorrelations(CR);
                 msgOut = getMessageFromAdminInput();
                 break;
             case "sendHistoricalCalculationResponse":
                 ListHistoricalCalculationsResponse HCR = (ListHistoricalCalculationsResponse) msg;
+                endTime = System.nanoTime();
                 System.out.println(HCR.getListOfHistoricalCalculations());
+
+                displayTimingInfo(HCR);
+
                 msgOut = getMessageFromAdminInput();
                 break;
             case "viewHistoricalCalculation":
                 CalculationResponse historicalCR = (CalculationResponse) msg;
-                displayCorrelations(historicalCR.getCorrelations());
+                displayCorrelations(historicalCR);
                 msgOut = getMessageFromAdminInput();
+
                 break;
             case "FileReadingError":
                 System.out.println("Error reading file. Please ensure that the file name is spelt correctly.");
@@ -99,7 +108,6 @@ public class AdminClientController implements MessageListener {
         Message msgOut = new Message("quit");
         while (invalidResponse) {
 	        System.out.println("\nPlease enter a command:");
-
             try {
                 invalidResponse = false;
                 String userInput = inFromUser.readLine().trim();
@@ -107,26 +115,24 @@ public class AdminClientController implements MessageListener {
                     String[] inputArgs = userInput.split(" ");
 
                     switch (inputArgs[0].toLowerCase()) {
-                        case "help":
-                        case "0":
+                        case "help": case "0":
                             displayAllCommands();
                             invalidResponse = true;
                             break;
-                        case "calculate":
-                        case "1":
+                        case "calculate": case "1":
+                            startTime = System.nanoTime();
                             msgOut = createCalculationReqeust(inputArgs);
                             break;
-                        case "list":
-                        case "2":
+                        case "list": case "2":
+                            startTime = System.nanoTime();
                             msgOut = new Message("listHistoricalCalculations");
                             break;
-                        case "get":
-                        case "3":
+                        case "get": case "3":
+                            startTime = System.nanoTime();
                             System.out.println("Please enter the filename of a previous calculation:");
                             msgOut = new ViewHistoricalCalculationRequest(inFromUser.readLine());
                             break;
-                        case "quit":
-                        case "4":
+                        case "quit": case "4":
                             msgOut.setAction("quit");
                             break;
                         default:
@@ -173,12 +179,33 @@ public class AdminClientController implements MessageListener {
     /**
      * Display all correlations.
      *
-     * @param correlations
      */
-    private void displayCorrelations(List<RulesCorrelation> correlations) {
+    private void displayCorrelations(CalculationResponse historicalCR) {
+        List<RulesCorrelation> correlations = historicalCR.getCorrelations();
+        long elapsedTime = historicalCR.getElapsedTime();
         for (RulesCorrelation correlation : correlations) {
             System.out.println(correlation);
         }
+        System.out.println("Calculation elapsed time: " + (elapsedTime));
+
+        if(historicalCR.getMasterPart1Time() != 0) {
+            System.out.println("Master Part 1 elapsed time: " + historicalCR.getMasterPart1Time());
+            System.out.println("Master Part 2 elapsed time: " + historicalCR.getMasterPart2Time());
+            System.out.println("Slave Part 1 elapsed time: " + historicalCR.getSlavePart1Time());
+            System.out.println("Slave Part 2 elapsed time: " + historicalCR.getSlavePart2Time());
+
+            System.out.println("The file transfer time between Master and Slave (Part 1) is: " + (historicalCR.getMasterPart1Time() - historicalCR.getSlavePart1Time()));
+            System.out.println("The file transfer time between Master and Slave (Part 2) is: " + (historicalCR.getMasterPart2Time() - historicalCR.getSlavePart2Time()));
+        }
+    }
+
+    private void displayTimingInfo(Message msg) {
+        long adminElapsedTime = endTime - startTime;
+        long masterElapsedTime = msg.getElapsedTime();
+
+        System.out.println("The admin elapsed time is: " + (adminElapsedTime));
+        System.out.println("The master elapsed time is: " + masterElapsedTime);
+        System.out.println("The file transfer time from admin to network is: " + (adminElapsedTime - masterElapsedTime));
     }
 
     /**

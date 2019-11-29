@@ -10,6 +10,8 @@ public class Message implements Serializable{
 
 	private String action;
 
+	private long elapsedTime;
+
 	public Message(String action) {
 		this.action = action;
 	}
@@ -26,5 +28,11 @@ public class Message implements Serializable{
 		this.action = action;
 	}
 
+	public void setElapsedTime(long elapsedTime) {
+		this.elapsedTime = elapsedTime;
+	}
 
+	public long getElapsedTime() {
+		return elapsedTime;
+	}
 }
