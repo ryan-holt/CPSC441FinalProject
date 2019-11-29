@@ -152,7 +152,7 @@ public class MasterController implements MessageListener {
 		    	msgOut.setAction("finishedSurvey");
 		    	break;
 		    case "calculateCorrelation":
-				msgOut = calculateCorrelation(); // Run the really big calculation
+				msgOut = calculateCorrelation((CalculationRequest) msg); // Run the really big calculation
 			    break;
 		    case "associationRulesResponse":
 				masterPart1Time = System.nanoTime() - masterPart1StartTime;
@@ -220,7 +220,7 @@ public class MasterController implements MessageListener {
 	 * Prepares the association rule request package to send to slave
 	 * @throws IOException
 	 */
-	public ArrayList<AssociationRuleRequest> prepareAssociationRuleRequests() {
+	public ArrayList<AssociationRuleRequest> prepareAssociationRuleRequests(int keywordGroupSize) {
 		ArrayList<SurveyEntry> entries = null;
 		try {
 			entries = fileHandler.ReadFromFile();
@@ -228,7 +228,7 @@ public class MasterController implements MessageListener {
 			e.printStackTrace();
 		}
 		HashMap<Integer,ArrayList<SurveyEntry>> entriesByQuestion = orderEntriesByQuestion(entries);
-		HashMap<Integer,ArrayList<KeywordGroup>> keywordsByQuestion = getKeywordGroupsByQuestion();
+		HashMap<Integer,ArrayList<KeywordGroup>> keywordsByQuestion = getKeywordGroupsByQuestion(keywordGroupSize);
 		return createAssociationRuleRequests(entriesByQuestion, keywordsByQuestion);
 	}
 
@@ -239,11 +239,11 @@ public class MasterController implements MessageListener {
 	 */
 	HashMap<Integer,ArrayList<SurveyEntry>> orderEntriesByQuestion(ArrayList<SurveyEntry> entries) {
 		HashMap<Integer,ArrayList<SurveyEntry>> orderedEntries = new HashMap<>();
-		for(int i = 0; i < entries.size(); i++) {
-			if(!orderedEntries.containsKey(entries.get(i).getQuestion())) {
-				orderedEntries.put(entries.get(i).getQuestion(),new ArrayList<SurveyEntry>());
+		for (SurveyEntry entry : entries) {
+			if (!orderedEntries.containsKey(entry.getQuestion())) {
+				orderedEntries.put(entry.getQuestion(), new ArrayList<SurveyEntry>());
 			}
-			orderedEntries.get(entries.get(i).getQuestion()).add(entries.get(i));
+			orderedEntries.get(entry.getQuestion()).add(entry);
 		}
 		return orderedEntries;
 	}
@@ -252,25 +252,31 @@ public class MasterController implements MessageListener {
 	 * Gets the keyword groups per question, and sorts in a hash map
 	 * @return Hashmap that has all the keyword groups ordered by question
 	 */
-	HashMap<Integer,ArrayList<KeywordGroup>> getKeywordGroupsByQuestion() {
+	HashMap<Integer,ArrayList<KeywordGroup>> getKeywordGroupsByQuestion(int groupSize) {
 		HashMap<Integer,ArrayList<KeywordGroup>> keywordGroups = new HashMap<>();
 		SurveyQuestions surveyQuestions = new SurveyQuestions();
 		for(int i = 0; i < surveyQuestions.getSurveyAnswersLists().size(); i++) {
-			for(int j = 0; j < surveyQuestions.getSurveyAnswersLists().get(i).size(); j++) {
-				for(int k = j+1; k < surveyQuestions.getSurveyAnswersLists().get(i).size(); k++) {
-					if (!keywordGroups.containsKey(i + 1)) {
-						keywordGroups.put(i + 1, new ArrayList<KeywordGroup>());
-					}
-					ArrayList<String> tempCombo = new ArrayList<>();
-					tempCombo.add(surveyQuestions.getSurveyAnswersLists().get(i).get(j));
-					tempCombo.add(surveyQuestions.getSurveyAnswersLists().get(i).get(k));
-					KeywordGroup tempGroup = new KeywordGroup(tempCombo);
-					keywordGroups.get(i + 1).add(tempGroup);
-				}
-			}
+			ArrayList<String> keywords = surveyQuestions.getSurveyAnswersLists().get(i);
+			int questionID = i + 1;
+			ArrayList<KeywordGroup> groupPerQuestion = new ArrayList<>();
+			calculateKeywordGroups(groupPerQuestion, new ArrayList<>(), keywords, 0, Math.min(groupSize, keywords.size()));
+			keywordGroups.put(questionID, groupPerQuestion);
 		}
 		System.out.println("HashMap keywordGroups: " + keywordGroups.keySet());
 		return keywordGroups;
+	}
+
+	void calculateKeywordGroups(ArrayList<KeywordGroup> allGroups, ArrayList<String> groupedKeywords, ArrayList<String> allKeywords, int keywordIndex, int groupSize) {
+		for (int i = keywordIndex; i < allKeywords.size(); i++) {
+			ArrayList<String> keywordsCopy = new ArrayList<>(groupedKeywords);
+			keywordsCopy.add(allKeywords.get(i));
+
+			if (keywordsCopy.size() < groupSize) {
+				calculateKeywordGroups(allGroups, keywordsCopy, allKeywords, i + 1, groupSize); // RECURSIVE CALL
+			} else {
+				allGroups.add(new KeywordGroup(keywordsCopy));
+			}
+		}
 	}
 
 	/**
@@ -288,8 +294,8 @@ public class MasterController implements MessageListener {
 	}
 
     // TODO Assign return type message
-    private synchronized CalculationResponse calculateCorrelation() {
-	    List<AssociationRuleRequest> requests = prepareAssociationRuleRequests();
+    private synchronized CalculationResponse calculateCorrelation(CalculationRequest request) {
+	    List<AssociationRuleRequest> requests = prepareAssociationRuleRequests(request.getKeywordGroupSize());
 
 	    clientFutures.clear();
 	    // Custom reset function to make latch re-usable

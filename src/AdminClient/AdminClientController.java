@@ -110,31 +110,36 @@ public class AdminClientController implements MessageListener {
 	        System.out.println("\nPlease enter a command:");
             try {
                 invalidResponse = false;
-                switch (inFromUser.readLine().toLowerCase()) {
-                    case "calculate": case "1":
-                        startTime = System.nanoTime();
-                        msgOut = new Message("calculateCorrelation");
-                        break;
-                    case "list": case "2":
-                        startTime = System.nanoTime();
-                        msgOut = new Message("listHistoricalCalculations");
-                        break;
-                    case "get": case "3":
-                        startTime = System.nanoTime();
-                        System.out.println("Please enter the filename of a previous calculation:");
-                        msgOut = new ViewHistoricalCalculationRequest(inFromUser.readLine());
-                        break;
-                    case "help": case "0":
-                        displayAllCommands();
-                        invalidResponse = true;
-                        break;
-                    case "quit": case "4":
-                        msgOut.setAction("quit");
-                        break;
-                    default:
-                        System.err.println("Invalid Input");
-                        invalidResponse = true;
-                        break;
+                String userInput = inFromUser.readLine().trim();
+                if (userInput != null && !userInput.isEmpty()) {
+                    String[] inputArgs = userInput.split(" ");
+
+                    switch (inputArgs[0].toLowerCase()) {
+                        case "help": case "0":
+                            displayAllCommands();
+                            invalidResponse = true;
+                            break;
+                        case "calculate": case "1":
+                            startTime = System.nanoTime();
+                            msgOut = createCalculationReqeust(inputArgs);
+                            break;
+                        case "list": case "2":
+                            startTime = System.nanoTime();
+                            msgOut = new Message("listHistoricalCalculations");
+                            break;
+                        case "get": case "3":
+                            startTime = System.nanoTime();
+                            System.out.println("Please enter the filename of a previous calculation:");
+                            msgOut = new ViewHistoricalCalculationRequest(inFromUser.readLine());
+                            break;
+                        case "quit": case "4":
+                            msgOut.setAction("quit");
+                            break;
+                        default:
+                            System.err.println("Invalid Input");
+                            invalidResponse = true;
+                            break;
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -154,6 +159,21 @@ public class AdminClientController implements MessageListener {
         System.out.println("get: Show the result for a historical calculation.");
         System.out.println("quit: Terminate the current session.");
         System.out.println("help: Display a list of all commands and their functionality.");
+    }
+
+    private CalculationRequest createCalculationReqeust(String[] inputArgs) {
+        int keywordGroupSize;
+        if (inputArgs.length > 1) {
+            try {
+                keywordGroupSize = Integer.parseInt(inputArgs[1]);
+            } catch (NumberFormatException e) {
+                System.out.println("Error: " + inputArgs[1] + " cannot be parsed into an int, assuming value is 2");
+                keywordGroupSize = 2;
+            }
+        } else {
+            keywordGroupSize = 2;
+        }
+        return new CalculationRequest(keywordGroupSize);
     }
 
     /**
@@ -209,7 +229,7 @@ public class AdminClientController implements MessageListener {
      * @throws ClassNotFoundException
      */
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        AdminClientController cc = new AdminClientController(getDesiredIP(args), 9000);
+        AdminClientController cc = new AdminClientController(getDesiredIP(), 9000);
         cc.communicateWithServer();
     }
 }
