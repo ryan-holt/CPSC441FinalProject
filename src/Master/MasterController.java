@@ -194,7 +194,8 @@ public class MasterController implements MessageListener {
     private Message getHistoricalCalculationResponse(String filename) {
         try {
             ArrayList<RulesCorrelation> correlations = fileHandler.getHistoricalCorrelations(filename);
-            return new CalculationResponse(correlations, masterPart1Time, masterPart2Time, slavePart1Time, slavePart2Time);
+//            return new CalculationResponse(correlations, masterPart1Time, masterPart2Time, slavePart1Time, slavePart2Time);
+            return new CalculationResponse(correlations, 0, 0, 0, 0);
         } catch (IOException e) {
             e.printStackTrace();
             return new Message("FileReadingError");
