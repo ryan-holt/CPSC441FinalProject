@@ -58,6 +58,16 @@ public class MasterController implements MessageListener {
 
 	private long endTime;
 
+	private long masterPart1StartTime;
+	private long masterPart1Time;
+
+	private long masterPart2StartTime;
+	private long masterPart2Time;
+
+	private long slavePart1Time;
+
+	private long slavePart2Time;
+
     public MasterController() {
         try {
 			fileHandler = new FileHandler();
@@ -145,9 +155,14 @@ public class MasterController implements MessageListener {
 				msgOut = calculateCorrelation(); // Run the really big calculation
 			    break;
 		    case "associationRulesResponse":
+				masterPart1Time = System.nanoTime() - masterPart1StartTime;;
+				slavePart1Time = msg.getElapsedTime();
+
 				// TODO clean out and delete, bypass error message
 		    	break;
 		    case "ruleCorrelationResponse":
+		    	masterPart2Time = System.nanoTime() - masterPart2StartTime;
+				slavePart2Time = msg.getElapsedTime();
 		    	// TODO clean out and delete, bypass error message
 		    	break;
 		    case "listHistoricalCalculations":
@@ -181,7 +196,7 @@ public class MasterController implements MessageListener {
     private Message getHistoricalCalculationResponse(String filename) {
         try {
             ArrayList<RulesCorrelation> correlations = fileHandler.getHistoricalCorrelations(filename);
-            return new CalculationResponse(correlations);
+            return new CalculationResponse(correlations, masterPart1Time, masterPart2Time, slavePart1Time, slavePart2Time);
         } catch (IOException e) {
             e.printStackTrace();
             return new Message("FileReadingError");
@@ -403,8 +418,8 @@ public class MasterController implements MessageListener {
 	private synchronized void addRuleResponseAndSendNext(ClientSocketHandler clientSocketHandler, AssociationRuleResponse response) {
 		// If any other messages need to be sent...
 		if (rulesController.addRuleResponse(response, clientSocketHandler)) {
+			masterPart1StartTime =  System.nanoTime();
 			clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
-
 			waitForSlaveRuleExecution();
 		} else {
 			latchCountDown();
@@ -415,8 +430,8 @@ public class MasterController implements MessageListener {
     private synchronized void addCorrelationResponseAndSendNext(ClientSocketHandler clientSocketHandler, RuleCorrelationResponse response) {
     	// If any other messages need to be sent...
     	if (rulesController.addCorrelationResponse(response, clientSocketHandler)) {
-		    clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
-
+		    masterPart2StartTime = System.nanoTime();
+    		clientFutures.put(clientSocketHandler, pool.submit(clientSocketHandler));
 		    waitForSlaveCorrelationExecution();
 	    } else {
     		latchCountDown();
@@ -424,7 +439,7 @@ public class MasterController implements MessageListener {
     }
 
     private CalculationResponse createCalculationResponse(List<RulesCorrelation> correlations) {
-		return new CalculationResponse(correlations);
+		return new CalculationResponse(correlations, masterPart1Time, masterPart2Time, slavePart1Time, slavePart2Time);
     }
 
     public static void main(String[] args) {

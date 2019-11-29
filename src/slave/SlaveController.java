@@ -15,6 +15,9 @@ public class SlaveController implements MessageListener {
 	private ExecutorService pool; // TODO Delete multithreading, not needed
 	private int PORT = 9001;
 
+	private long startTime;
+	private long endTime;
+
 	public SlaveController() {
 		rulesController = new SlaveRulesController();
 
@@ -46,6 +49,7 @@ public class SlaveController implements MessageListener {
 	
 	public Message handleMessage(Message msg) {
 		Message msgOut = null;
+		startTime = System.nanoTime();
 		switch (msg.getAction()) {
 			case "requestAssociationRules":
 				msgOut = rulesController.calculateAssociationRules((AssociationRuleRequest) msg);
@@ -60,6 +64,8 @@ public class SlaveController implements MessageListener {
 				System.err.println("Error: Message with action " + msg.getAction() + " is not recognized");
 				break;
 		}
+		endTime = System.nanoTime();
+		msgOut.setElapsedTime(endTime-startTime);
 		return msgOut;
 	}
 

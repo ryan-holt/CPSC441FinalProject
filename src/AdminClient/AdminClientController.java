@@ -62,7 +62,7 @@ public class AdminClientController implements MessageListener {
         switch (msg.getAction()) {
             case "sendCalculationResponse":
                 CalculationResponse CR = (CalculationResponse) msg;
-                displayCorrelations(CR.getCorrelations(), CR.getElapsedTime());
+                displayCorrelations(CR);
                 msgOut = getMessageFromAdminInput();
                 break;
             case "sendHistoricalCalculationResponse":
@@ -76,8 +76,9 @@ public class AdminClientController implements MessageListener {
                 break;
             case "viewHistoricalCalculation":
                 CalculationResponse historicalCR = (CalculationResponse) msg;
-                displayCorrelations(historicalCR.getCorrelations(), historicalCR.getElapsedTime());
+                displayCorrelations(historicalCR);
                 msgOut = getMessageFromAdminInput();
+
                 break;
             case "FileReadingError":
                 System.out.println("Error reading file. Please ensure that the file name is spelt correctly.");
@@ -158,13 +159,21 @@ public class AdminClientController implements MessageListener {
     /**
      * Display all correlations.
      *
-     * @param correlations
      */
-    private void displayCorrelations(List<RulesCorrelation> correlations, long elapsedTime) {
+    private void displayCorrelations(CalculationResponse historicalCR) {
+        List<RulesCorrelation> correlations = historicalCR.getCorrelations();
+        long elapsedTime = historicalCR.getElapsedTime();
         for (RulesCorrelation correlation : correlations) {
             System.out.println(correlation);
         }
         System.out.println("Calculation elapsed time: " + (elapsedTime));
+        System.out.println("Master Part 1 elapsed time: " + historicalCR.getMasterPart1Time());
+        System.out.println("Master Part 2 elapsed time: " + historicalCR.getMasterPart2Time());
+        System.out.println("Slave Part 1 elapsed time: " + historicalCR.getSlavePart1Time());
+        System.out.println("Slave Part 2 elapsed time: " + historicalCR.getSlavePart2Time());
+
+        System.out.println("The file transfer between Master and Slave (Part 1) is: " + (historicalCR.getMasterPart1Time() - historicalCR.getSlavePart1Time()));
+        System.out.println("The file transfer between Master and Slave (Part 2) is: " + (historicalCR.getMasterPart2Time() - historicalCR.getSlavePart2Time()));
     }
 
     private void displayTimingInfo(Message msg) {
@@ -183,7 +192,7 @@ public class AdminClientController implements MessageListener {
      * @throws ClassNotFoundException
      */
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        AdminClientController cc = new AdminClientController("localhost", 9000);
+        AdminClientController cc = new AdminClientController("10.13.77.154", 9000);
         cc.communicateWithServer();
     }
 }
