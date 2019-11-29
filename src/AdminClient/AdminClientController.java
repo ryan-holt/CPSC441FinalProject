@@ -229,7 +229,7 @@ public class AdminClientController implements MessageListener {
      * @throws ClassNotFoundException
      */
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        AdminClientController cc = new AdminClientController(getDesiredIP(), 9000);
+        AdminClientController cc = new AdminClientController(getDesiredIP(args), 9000);
         cc.communicateWithServer();
     }
 }
