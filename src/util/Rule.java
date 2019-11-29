@@ -36,4 +36,19 @@ public class Rule implements Serializable {
 	public void sortUsers() {
 		Collections.sort(users);
 	}
+
+	public boolean similar(Object obj) {
+		if (obj == this) {
+			return true;
+		} else if (!(obj instanceof Rule)) {
+			return false;
+		}
+
+		Rule other = (Rule) obj;
+		if (score != other.score) {
+			return false;
+		}
+
+		return keywordGroup.similar(other.keywordGroup);
+	}
 }

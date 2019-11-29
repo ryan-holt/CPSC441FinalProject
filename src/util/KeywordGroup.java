@@ -55,6 +55,13 @@ public class KeywordGroup implements Serializable, Comparable<KeywordGroup> {
 		return keywords1.equals(keywords2);
 	}
 
+	// TODO delete unused
+//	public int similarHashCode() {
+//		ArrayList<String> keywordsCopy = new ArrayList<>(keywords);
+//		Collections.sort(keywordsCopy);
+//		return keywordsCopy.hashCode();
+//	}
+
 	public int compareTo(KeywordGroup other) {
 		ArrayList<String> keywords1 = new ArrayList<>(keywords);
 		ArrayList<String> keywords2 = new ArrayList<>(other.keywords);

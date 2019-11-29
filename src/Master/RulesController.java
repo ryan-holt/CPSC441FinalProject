@@ -6,6 +6,10 @@ import util.sockethandler.ClientSocketHandler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -116,6 +120,7 @@ public class RulesController {
 
 		// Cut down on the list to the top 10 only
 		return correlations.stream()
+				.filter(distinctByKey(RulesCorrelation::similarHashCode))
 				.sorted((a, b) -> -1 * ((Double) a.getScore()).compareTo(b.getScore()))
 				.limit(maxEntries)
 				.collect(Collectors.toList());
@@ -151,15 +156,13 @@ public class RulesController {
 		sharedList.addAll(appendList);
 	}
 
-	// TODO Use this or delete it!
-	/**
-	 * Get the next entry from a shared list. Used for shared resources in multithreading
-	 */
-	private synchronized <T> T popSharedElement(List<T> sharedList) {
-		return sharedList.remove(0);
-	}
-
 	private synchronized <T> void clearSharedList(List<T> sharedList) {
 		sharedList.clear();
+	}
+
+	// TODO Move to a different spot
+	public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+		Set<Object> seen = ConcurrentHashMap.newKeySet();
+		return t -> seen.add(keyExtractor.apply(t));
 	}
 }

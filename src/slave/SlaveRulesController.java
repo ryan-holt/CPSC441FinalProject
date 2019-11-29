@@ -92,7 +92,7 @@ public class SlaveRulesController {
 
 			double supportScore = groupCount / entriesCount;
 
-			for (String keyword : keywords) {
+			keywordLoop: for (String keyword : keywords) {
 				double keywordCount = (double) keywordCounts.get(keyword);
 
 				if (keywordCount <= 0) {
@@ -105,6 +105,13 @@ public class SlaveRulesController {
 
 				KeywordGroup orderedGroup = getOrderedKeywordGroup(group, keyword);
 				Rule rule = new Rule(orderedGroup, score, users);
+
+				for (Rule iteratedRule : rules) {
+					if (rule.similar(iteratedRule)) {
+						continue keywordLoop; // Don't add this rule, it's similar to another
+					}
+				}
+
 				if (rules.size() < maxEntries) {
 					rules.add(rule);
 					if (score < lowestScore) {
@@ -153,9 +160,13 @@ public class SlaveRulesController {
 	public RuleCorrelationResponse calculateRulesCorrelationResponse(RuleCorrelationRequest correlationRequest) {
 		List<RulesCorrelation> correlations = new ArrayList<RulesCorrelation>();
 
+		int maxEntries = 30;
+		double lowestScore = 99999999;
+		RulesCorrelation lowestScoreCorrelation = null;
+
 		Rule baseRule = correlationRequest.getBaseRule();
 		List<String> baseUsers = baseRule.getUsers();
-		for (Rule rule : correlationRequest.getRules()) {
+		ruleLoop: for (Rule rule : correlationRequest.getRules()) {
 			// Find the users that are common between baseRule and this particular iterated rule
 			// Note: The users are sorted already, so you can do this algorithm with just 1 loop
 			List<String> users = rule.getUsers();
@@ -194,7 +205,34 @@ public class SlaveRulesController {
 			combinedKeywordGroups.add(baseRule.getKeywordGroup());
 			combinedKeywordGroups.add(rule.getKeywordGroup());
 
-			correlations.add(new RulesCorrelation(combinedKeywordGroups, score));
+			RulesCorrelation correlation = new RulesCorrelation(combinedKeywordGroups, score);
+			for (RulesCorrelation iteratedCorrelation : correlations) {
+				if (correlation.similar(iteratedCorrelation)) {
+					continue ruleLoop; // Entry already exists, do not add
+				}
+			}
+
+			// ---------------------------------
+			if (correlations.size() < maxEntries) {
+				correlations.add(correlation);
+				if (score < lowestScore) {
+					lowestScore = score;
+					lowestScoreCorrelation = correlation;
+				}
+
+			} else if (score > lowestScore){
+				correlations.add(correlation);
+				// Evict the lowest score group
+				correlations.remove(lowestScoreCorrelation);
+				// Find the new lowest score group
+				for (RulesCorrelation iteratedCorrelation : correlations) {
+					if (lowestScore > iteratedCorrelation.getScore()) {
+						lowestScoreCorrelation = iteratedCorrelation;
+						lowestScore = iteratedCorrelation.getScore();
+					}
+				}
+			}
+			// ------------------------------------
 		}
 
 		correlations = filterTopCorrelations(correlations);

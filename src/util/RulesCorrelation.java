@@ -1,10 +1,7 @@
 package util;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
+import java.util.*;
 
 public class RulesCorrelation implements Serializable {
     private ArrayList<KeywordGroup> keywordGroups;
@@ -67,6 +64,20 @@ public class RulesCorrelation implements Serializable {
         }
 
         return true;
+    }
+
+    /**
+     * Get the hash code for a copy of this object where all the elements have been sorted
+     * The copy of this object is similar to this object such that this.similar(copyOfThis) == true
+     * @return A hash code based on the description above
+     */
+    public int similarHashCode() {
+        ArrayList<KeywordGroup> groupsCopy = new ArrayList<>(keywordGroups);
+        Collections.sort(groupsCopy);
+
+        groupsCopy.forEach(group -> group.sort());
+
+        return Objects.hash(groupsCopy, score);
     }
 
     public double getScore() {
