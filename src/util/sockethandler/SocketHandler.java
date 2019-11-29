@@ -80,6 +80,7 @@ abstract class SocketHandler implements Runnable {
 	public void stop() {
 		try {
 			shouldRun = false;
+
 			socket.close();
 			socketIn.close();
 			socketOut.close();

@@ -60,7 +60,6 @@ public class SlaveController implements MessageListener {
 				System.err.println("Error: Message with action " + msg.getAction() + " is not recognized");
 				break;
 		}
-
 		return msgOut;
 	}
 

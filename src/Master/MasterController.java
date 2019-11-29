@@ -54,6 +54,10 @@ public class MasterController implements MessageListener {
 	 */
 	private FileHandler fileHandler;
 
+	private long startTime;
+
+	private long endTime;
+
     public MasterController() {
         try {
 			fileHandler = new FileHandler();
@@ -127,6 +131,7 @@ public class MasterController implements MessageListener {
     }
 
     public Message handleMessage(Message msg) {
+		startTime = System.nanoTime();
     	Message msgOut = new Message("");
 	    switch (msg.getAction()) {
 		    case "requestSurvey":
@@ -168,7 +173,8 @@ public class MasterController implements MessageListener {
 			    msgOut.setAction("terminate");
 			    break;
 	    }
-
+		endTime = System.nanoTime();
+	    msgOut.setElapsedTime(endTime-startTime);
 	    return msgOut;
     }
 
